@@ -1,0 +1,442 @@
+.card-container {
+    text-align: center;
+    max-width: 600px;
+    width: 100%;
+}
+.card-container h2{
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+    background: rgba(17, 24, 39, 0.7);
+    padding: 20px;
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+}
+body {
+    font-family: Arial, sans-serif;
+    color: white;
+    background-color: black;
+    margin: 0;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    text-align: center;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+
+.loader {
+    width: 48px;
+    height: 48px;
+    border: 5px solid #FFFC00;
+    border-bottom-color: transparent;
+    border-radius: 50%;
+    display: inline-block;
+    box-sizing: border-box;
+    animation: rotation 1s linear infinite;
+    position: fixed;
+}
+
+@keyframes rotation {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+  
+
+.profile-container {
+    max-width: 400px;
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    box-shadow: 0 4px 10px rgba(255, 255, 255, 0.1);
+}
+
+.profile-picture {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 4px solid rgba(255, 255, 255, 0.2);
+    margin: 0 auto 15px;
+}
+
+h2 {
+    font-size: 24px;
+    font-weight: bold;
+    margin: 10px 0;
+}
+
+p {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 14px;
+    margin-bottom: 20px;
+}
+
+/* Social Links */
+.social-links {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.social-links a {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(255, 255, 255, 0.1);
+    padding: 12px;
+    border-radius: 8px;
+    color: white;
+    text-decoration: none;
+    font-size: 16px;
+    transition: background 0.3s;
+}
+
+.social-links a:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+/* Get in Touch Button */
+#contactButton {
+    width: 100%;
+    padding: 12px;
+    background: #2563eb;
+    color: white;
+    text-decoration: none;
+    border-radius: 8px;
+    margin-top: 20px;
+    cursor: pointer;
+    transition: background 0.3s;
+    border: none;
+    font-size: 16px;
+}
+
+#contactButton:hover {
+    background-color: #1e40af;
+}
+
+.footer, footer {
+    margin-top: auto;
+    padding: 15px 0 20px;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.5);
+    text-align: center;
+    width: 100%;
+}
+/* Add these new styles */
+.profile-banner {
+    height: 120px;
+    background-size: cover;
+    background-position: center;
+    border-radius: 12px 12px 0 0;
+    margin: -20px -20px 20px -20px;
+}
+
+.plan-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    background: #2563eb;
+    color: white;
+    border-radius: 20px;
+    font-size: 12px;
+    margin: 10px 0;
+    text-transform: uppercase;
+    font-weight: bold;
+}
+
+.error-message {
+    text-align: center;
+    padding: 2rem;
+    background: rgba(0, 0, 0, 0.5) !important;
+    border-radius: 1rem;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.error-button{
+    width: 100%;
+    padding: 12px;
+    background: #f87171;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    margin-top: 20px;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+.error-message h2 {
+    color: #f87171;
+    margin-bottom: 15px;
+}
+
+.error-message p {
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.contact-btn {
+    width: 100%;
+    padding: 12px;
+    background: #2563eb;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    margin-top: 20px;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+.contact-btn:hover {
+    background-color: #1e40af;
+}
+
+.contact-details-container {
+    padding: 1.5rem;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+}
+.contact-header {
+    text-align: center;
+    margin-bottom: 1.5rem;
+}
+.contact-header img {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    margin-bottom: 0.5rem;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+}
+.contact-header h3 {
+    font-size: 1.25rem;
+    color: #fff;
+    margin: 0.5rem 0;
+}
+.contact-table {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+.contact-row {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+.contact-row:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateX(5px);
+}
+.contact-icon {
+    flex: 0 0 40px;
+    text-align: center;
+    color: #fff;
+}
+.contact-info {
+    flex: 1;
+}
+.contact-link {
+    color: #fff;
+    text-decoration: none;
+    font-size: 0.9rem;
+    word-break: break-all;
+}
+.contact-link:hover {
+    text-decoration: underline;
+}
+
+.footer {
+    margin-top: auto;
+    padding-bottom: 20px;
+    padding-top: 15px;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.5);
+    text-align: center;
+    position: relative;
+    bottom: 0;
+    width: 100%;
+}
+.tc-share-popup {
+    border-radius: 12px !important;
+    font-family: 'Segoe UI', Roboto, sans-serif;
+    max-width: 600px !important;
+}
+
+.tc-share-container {
+    text-align: center;
+    padding: 0 10px;
+}
+
+.tc-profile-header {
+    margin-bottom: 20px;
+}
+
+.tc-profile-pic {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin: 0 auto 10px;
+    border: 3px solid #f0f0f0;
+}
+
+.avatar-fallback {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 10px;
+    color: white;
+    font-weight: bold;
+    font-size: 24px;
+}
+
+.tc-username {
+    margin: 0;
+    color: #333;
+    font-size: 1.2rem;
+}
+
+.tc-share-link {
+    display: flex;
+    margin: 20px 0;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+#tc-share-link-input {
+    flex: 1;
+    padding: 10px 15px;
+    border: none;
+    outline: none;
+    font-size: 14px;
+    background: #f9f9f9;
+}
+
+.tc-copy-btn {
+    background: #4a90e2;
+    color: white;
+    border: none;
+    padding: 0 15px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 14px;
+    transition: background 0.2s;
+}
+
+.tc-copy-btn:hover {
+    background: #3a7bc8;
+}
+
+.tc-social-share {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin: 25px 0;
+}
+
+.tc-social-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: none;
+    color: white;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.tc-social-btn:hover {
+    transform: scale(1.1);
+}
+
+.tc-social-btn.facebook { background: #3b5998; }
+.tc-social-btn.whatsapp { background: #25D366; }
+.tc-social-btn.linkedin { background: #0077B5; }
+.tc-social-btn.messenger { background: #0084FF; }
+.tc-social-btn.snapchat { background: #FFFC00; color: #000; }
+
+.tc-signup-cta {
+    margin: 30px 0 20px;
+    padding-top: 20px;
+    border-top: 1px solid #eee;
+}
+
+.tc-signup-cta p {
+    color: #666;
+    margin-bottom: 15px;
+    font-size: 15px;
+}
+
+.tc-signup-btn {
+    background: linear-gradient(to right, #4a90e2, #6a5acd);
+    color: white;
+    border: none;
+    padding: 10px 25px;
+    border-radius: 25px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.tc-signup-btn:hover {
+    transform: translateY(-2px);
+}
+
+.tc-footer-links {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid #eee;
+}
+
+.tc-footer-link {
+    color: #999;
+    text-decoration: none;
+    font-size: 13px;
+}
+
+.tc-footer-link:hover {
+    text-decoration: underline;
+}
+
+.tc-close-btn {
+    color: #999 !important;
+    font-size: 24px !important;
+}
+.top-right {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    z-index: 1000;
+    display: flex;
+}
+
+.tc-close-btn:hover {
+    color: #666 !important;
+}
+.tc-cards-share-banner {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 8px;
+    padding: 10px;
+    max-width: 80%;
+    margin-left: auto;
+    margin-right: auto;
+}
