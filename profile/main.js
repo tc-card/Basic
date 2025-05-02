@@ -20,7 +20,7 @@ document.addEventListener("DOMContentLoaded", function() {
     // Database configuration with plan types
     const databases = [
         {
-            id: 'AKfycbyTBGzC3opiKi6tBMDqcQ3HmJIckUNZ6PXEl1QEjJaOd2Zd4zOrr-9tnhRGrTzlKKAn',
+            id: 'AKfycbzPv8Rr4jM6Fcyjm6uelUtqw2hHLCFWYhXJlt6nWTIKaqUL_9j_41rwzhFGMlkF2nrG',
             plan: 'basic'
         }
     ];
