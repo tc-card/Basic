@@ -1,6 +1,22 @@
 document.addEventListener("DOMContentLoaded", function() {
+    // Configuration - moved to top for easy maintenance
+    const CONFIG = {
+        defaultBg: "url(https://tccards.tn/Assets/bg.png) center fixed",
+        defaultProfilePic: "https://tccards.tn/Assets/default.png",
+        databases: [
+            {
+                id: 'AKfycbzPv8Rr4jM6Fcyjm6uelUtqw2hHLCFWYhXJlt6nWTIKaqUL_9j_41rwzhFGMlkF2nrG',
+                plan: 'basic'
+            }
+        ],
+        styles: {
+            corporateGradient: { background: 'linear-gradient(145deg, rgb(9, 9, 11), rgb(24, 24, 27), rgb(9, 9, 11))' },
+            oceanGradient: { background: 'linear-gradient(145deg, rgb(2, 6, 23), rgb(15, 23, 42), rgb(2, 6, 23))' },
+        }
+    };
+
     // Set initial background
-    document.body.style.background = "url(https://tccards.tn/Assets/bg.png) center fixed";
+    document.body.style.background = CONFIG.defaultBg;
     document.body.style.backgroundSize = "cover";
     document.body.style.backdropFilter = "blur(5px)";
     
@@ -10,63 +26,44 @@ document.addEventListener("DOMContentLoaded", function() {
         showError("No profile link provided");
         return;
     }
-    // Change the url to https://card.tccards.tn/@"hash" without reloading just the appearance of the url
+
+    // Update URL without reload
     const newUrl = `https://card.tccards.tn/@${hash}`;
     window.history.replaceState(null, null, newUrl);
-    // Determine if it's an ID or link lookup
+
+    // Determine lookup type and start search
     const isIdLookup = hash.startsWith('id_');
     const identifier = isIdLookup ? hash.split('_')[1] : hash;
     
-    // Database configuration with plan types
-    const databases = [
-        {
-            id: 'AKfycbzPv8Rr4jM6Fcyjm6uelUtqw2hHLCFWYhXJlt6nWTIKaqUL_9j_41rwzhFGMlkF2nrG',
-            plan: 'basic'
-        }
-    ];
-
-    // Start searching databases
-    searchDatabases(databases, identifier, isIdLookup);
+    searchDatabases(CONFIG.databases, identifier, isIdLookup);
 });
 
-// Enhanced database search
+// Improved database search with better error handling
 async function searchDatabases(databases, identifier, isIdLookup, index = 0) {
-    if (index >= databases.length) {
-        showError("Profile not found in any database");
-        return;
-    }
-
-    const db = databases[index];
-    
     try {
+        if (index >= databases.length) {
+            showError("Profile not found in any database");
+            return;
+        }
+
+        const db = databases[index];
         const param = isIdLookup ? 'id' : 'link';
         const url = `https://script.google.com/macros/s/${db.id}/exec?${param}=${encodeURIComponent(identifier)}`;
         
-        const response = await fetch(url);
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
+        const response = await fetchWithTimeout(url, {
+            timeout: 5000 // 5 second timeout
+        });
+        
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        
         const data = await response.json();
         
-        // Debug log
-        console.log('Received data:', data);
-        
-        // If data has status error, try next database
-        if (data && data.status === "error") {
-            searchDatabases(databases, identifier, isIdLookup, index + 1);
-            return;
+        if (data?.status === "error") {
+            return searchDatabases(databases, identifier, isIdLookup, index + 1);
         }
         
-        // If we have valid data, handle it
         if (data && typeof data === 'object') {
-            try {
-                handleProfileData(data);
-                // If the profile is found, stop searching
-                return;
-            } catch (err) {
-                console.error('Error in handleProfileData:', err);
-                searchDatabases(databases, identifier, isIdLookup, index + 1);
-            }
+            handleProfileData(data);
         } else {
             searchDatabases(databases, identifier, isIdLookup, index + 1);
         }
@@ -76,267 +73,296 @@ async function searchDatabases(databases, identifier, isIdLookup, index = 0) {
     }
 }
 
+// Helper function with timeout
+async function fetchWithTimeout(resource, options = {}) {
+    const { timeout = 8000 } = options;
+    
+    const controller = new AbortController();
+    const id = setTimeout(() => controller.abort(), timeout);
+    
+    const response = await fetch(resource, {
+        ...options,
+        signal: controller.signal  
+    });
+    clearTimeout(id);
+    
+    return response;
+}
+
 function handleProfileData(data) {
-    const loader = document.querySelector('.loader');
-    if (loader) {
-        loader.style.display = 'none';
-    }
-    // Open the data array received data.data to access the profile data
-    data = data.data || data;
-
-    if (!data || typeof data !== 'object') {
-        showError("Invalid profile data received");
-        return;
-    }
-
-    if (data.status === "error") {
-        showError(data?.message || "Profile data could not be loaded");
-        return;
-    }
-    
-    if (!data.Name) {
-        showError("Invalid profile data: Name is required");
-        return;
-    }
-    
-    if (data?.Status && data.Status !== "Active") {
-        showError("This profile is currently inactive");
-        return;
-    }
-
     try {
-        // Apply plan-specific features
-        const container = document.querySelector(".card-container");
-        container.style.display = 'block';
+        const loader = document.querySelector('.loader');
+        if (loader) loader.style.display = 'none';
         
-        // Safe data access with fallbacks
-        const profileData = {
-            name: data.Name || 'User',
-            link: data.Link || 'tccards',
-            tagline: data.Tagline || '',
-            profilePic: data['Profile Picture URL'] || 'https://tccards.tn/Assets/default.png',
-            formType: data['Form Type'] || '',
-            socialLinks: data['Social Links'] || '',
-            email: data.Email || '',
-            phone: data.Phone || '',
-            address: data.Address || '',
-            formSubmitUrl: data['Form Submit URL'] || 'https://script.google.com/macros/s/AKfycbxU8axs4Xduqc84jj_utLsi-pCxSEyw9exEO7PuNo940qQ1bJ4-NxREnUgVhdzS9plb/exec'
-        };
+        // Normalize data structure
+        data = data.data || data;
 
-        // Apply background style if available
-        if (data['Selected Style']) {
-            const selectedStyle = data['Selected Style'];
-            
-            if (selectedStyle.startsWith('linear-gradient')) {
-                document.body.style.background = `${selectedStyle}`;
-            } else {
-                const styles = {
-                    minimal: { background: '#18181b' },
-                    black: { background: '#09090b' },
-                    navy: { background: '#020617' },
-                    forest: { background: '#022c22' },
-                    wine: { background: '#450a0a' },
-                    clouds: { background: '#0ea5e9' },
-                    Pink: { background: '#9b0055' },
-                    SkyBlue: { background: '#2563eb' },
-                    paleRed: { background: '#f00f4d' },
-                    corporateGradient: { background: 'linear-gradient(145deg, rgb(9, 9, 11), rgb(24, 24, 27), rgb(9, 9, 11))' },
-                    oceanGradient: { background: 'linear-gradient(145deg, rgb(2, 6, 23), rgb(15, 23, 42), rgb(2, 6, 23))' },
-                    forestGradient: { background: 'linear-gradient(145deg, rgb(2, 44, 34), rgb(6, 78, 59), rgb(2, 44, 34))' },
-                    burgundyGradient: { background: 'linear-gradient(145deg, rgb(69, 10, 10), rgb(127, 29, 29), rgb(69, 10, 10))' },
-                    default: "url(https://tccards.tn/Assets/bg.png) center fixed"
-                };
-                document.body.style.background = styles[data['Selected Style']]?.background || styles.default;
-                document.body.style.backgroundSize = "cover";
-            }
+        if (!data || typeof data !== 'object') {
+            throw new Error("Invalid profile data received");
+        }
+
+        if (data.status === "error") {
+            throw new Error(data?.message || "Profile data could not be loaded");
         }
         
-        const styles = {
-            corporateGradient: "linear-gradient(145deg, rgb(9, 9, 11), rgb(24, 24, 27), rgb(9, 9, 11))",
-            oceanGradient: "linear-gradient(145deg, rgb(2, 6, 23), rgb(15, 23, 42), rgb(2, 6, 23))",
-            default: "url(https://tccards.tn/Assets/bg.png) center fixed"
-        };
+        if (!data.Name) {
+            throw new Error("Invalid profile data: Name is required");
+        }
         
-        // Render the profile card
-        container.innerHTML = `
-        <center>
-            <div class="profile-container">
+        if (data?.Status && data.Status !== "Active") {
+            throw new Error("This profile is currently inactive");
+        }
+
+        renderProfileCard(data);
+    } catch (error) {
+        console.error("Profile handling error:", error);
+        showError(error.message);
+    }
+}
+
+function renderProfileCard(data) {
+    const container = document.querySelector(".card-container");
+    container.style.display = 'block';
+    
+    // Prepare profile data with defaults
+    const profileData = {
+        name: data.Name || 'User',
+        link: data.Link || 'tccards',
+        tagline: data.Tagline || '',
+        profilePic: data['Profile Picture URL'] || CONFIG.defaultProfilePic,
+        form: data['Form Form'] || '', // form email
+        socialLinks: data['Social Links'] || '',
+        email: data.Email || '',
+        phone: data.Phone || '',
+        address: data.Address || '',
+        formSubmitUrl: data['Form Submit URL'] || 'https://script.google.com/macros/s/AKfycbxU8axs4Xduqc84jj_utLsi-pCxSEyw9exEO7PuNo940qQ1bJ4-NxREnUgVhdzS9plb/exec'
+    };
+
+    // Apply background style if available
+    applyBackgroundStyle(data['Selected Style']);
+
+    // Render the profile card
+    container.innerHTML = createProfileCardHTML(profileData, data['Selected Style']);
+
+    // Initialize form if present
+    if (profileData.formType) {
+        const form = container.querySelector('form');
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                handleFormSubmit(e, profileData.formType, profileData.email, profileData.formSubmitUrl);
+            });
+        }
+    }
+
+    // Show success notification
+    if (typeof Swal !== 'undefined') {
+        Swal.fire({
+            icon: 'success',
+            title: `Welcome to ${profileData.name}'s profile`,
+            text: 'Tap to interact with the profile',
+            background: '#1a1a1a',
+            color: '#fff'
+        });
+    }
+}
+
+function applyBackgroundStyle(selectedStyle) {
+    if (!selectedStyle) return;
+
+    if (selectedStyle.startsWith('linear-gradient')) {
+        document.body.style.background = selectedStyle;
+    } else {
+        document.body.style.background = CONFIG.styles[selectedStyle]?.background || CONFIG.defaultBg;
+    }
+    document.body.style.backgroundSize = "cover";
+}
+
+function createProfileCardHTML(profileData, selectedStyle) {
+    const style = selectedStyle ? CONFIG.styles[selectedStyle]?.background : CONFIG.defaultBg;
+    
+    return `
+    <center>
+        <div class="profile-container">
             <div class="top-right" onclick="showShareOptions('${escapeHtml(profileData.link)}')">
-            <i class="fas fa-share-alt"></i>
+                <i class="fas fa-share-alt"></i>
             </div>
             
-            <img src="${escapeHtml(profileData.profilePic)}" class="profile-picture" alt="${escapeHtml(profileData.name)}'s profile">
+            <img src="${escapeHtml(profileData.profilePic)}" 
+             class="profile-picture js-profile-image" 
+             alt="${escapeHtml(profileData.name)}'s profile"
+             data-fallback="${escapeHtml(CONFIG.defaultProfilePic)}">
             
             <h2>${escapeHtml(profileData.name)}</h2>
             ${profileData.tagline ? `<p>${escapeHtml(profileData.tagline)}</p>` : ''}
             
-            ${profileData.formType ? 
-            `<div id="form-preview" class="mt-4">
-                ${renderProfileForm(profileData.formType, profileData.email, profileData.formSubmitUrl)}
-            </div>` : ''}
+            ${profileData.form? 
+                `<div id="form-preview" class="mt-4">
+                    ${renderProfileForm(profileData.form, profileData.formSubmitUrl)}
+                </div>` : ''}
             
             ${renderSocialLinks(profileData.socialLinks)}
             
             ${(profileData.email || profileData.phone || profileData.address) ? 
-            `<button class="contact-btn" onclick="showContactDetails(${escapeHtml(JSON.stringify({
-            name: profileData.name,
-            profilePic: profileData.profilePic,
-            email: profileData.email,
-            phone: profileData.phone,
-            address: profileData.address,
-            style: styles[data['Selected Style']]?.background || styles.default
-            }))})">Get in Touch</button>` : ''}
+                `<button class="contact-btn" onclick="showContactDetails(${escapeHtml(JSON.stringify({
+                    name: profileData.name,
+                    profilePic: profileData.profilePic,
+                    email: profileData.email,
+                    phone: profileData.phone,
+                    address: profileData.address,
+                    style: style
+                }))})">Get in Touch</button>` : ''}
 
             <footer class="footer">
-            <p>Powered by &copy; Total Connect ${new Date().getFullYear()}  </p>
-            <p><a href="https://get.tccards.tn" target="_blank" style='color:springgreen'>Get Your Free Digital Profile</a></p>
+                <p>Powered by &copy; Total Connect ${new Date().getFullYear()}</p>
+                <p><a href="https://get.tccards.tn" target="_blank" style='color:springgreen'>Get Your Free Digital Profile</a></p>
             </footer>
-            </div>
-        </center>
-        `;
-        
-        // Initialize form submission handlers
-        if (profileData.formType) {
-            const form = container.querySelector('form');
-            if (form) {
-                form.addEventListener('submit', function(e) {
-                    e.preventDefault();
-                    handleFormSubmit(e, profileData.formType, profileData.email, profileData.formSubmitUrl);
-                });
-            }
-        }
-        
-        // Show success notification
-        if (typeof Swal !== 'undefined') {
-            Swal.fire({
-                icon: 'success',
-                title: `Welcome to ${profileData.name}'s profile`,
-                text: 'Tap to interact with the profile'
-            });
-        }
-    } catch (error) {
-        console.error("Profile rendering error:", error);
-        showError("Error displaying profile");
-    }
-}
-
-function renderProfileForm(type, profileEmail, formSubmitUrl) {
-    const forms = {
-        contact: {
-            title: "Contact Request Form",
-            fields: [
-                { name: "name", placeholder: "Your Name", type: "text" },
-                { name: "email", placeholder: "Your Email", type: "email" },
-                { name: "phone", placeholder: "Your Phone (Optional)", type: "tel", required: false },
-                { name: "message", placeholder: "Your Message/Inquiry", type: "textarea" }
-            ]
-        },
-    };
-
-    const form = forms[type];
-    if (!form) return '';
-
-    let formHtml = `
-        <h3 class='text-xl font-semibold mb-4 text-white'>${form.title}</h3>
-        <form class='form-container' data-submit-url="${escapeHtml(formSubmitUrl)}">
+        </div>
+    </center>
     `;
-
-    form.fields.forEach(field => {
-        if (field.type === "textarea") {
-            formHtml += `
-            <div class='mb-4'>
-                <textarea 
-                name='${field.name}' 
-                placeholder='${field.placeholder}' 
-                class='w-full p-3 bg-transparent text-white border border-white/50 rounded-lg focus:outline-none focus:border-white' 
-                ${field.required === false ? '' : 'required'}></textarea>
-            </div>`;
-        } else {
-            formHtml += `
-            <div class='mb-4'>
-                <input 
-                type='${field.type}' 
-                name='${field.name}' 
-                placeholder='${field.placeholder}' 
-                class='w-full p-3 bg-transparent text-white border border-white/50 rounded-lg focus:outline-none focus:border-white' 
-                ${field.required === false ? '' : 'required'} />
-            </div>`;
-        }
-    });
-
-    formHtml += `
-        <input type="hidden" name="form_type" value="${type}">
-        <input type="hidden" name="profile_email" value="${escapeHtml(profileEmail)}">
-        <button type="submit" class="w-full p-3 bg-white text-black rounded-lg hover:bg-gray-200 transition-colors">
-            Submit
-        </button>
-    </form>`;
-    
-    return formHtml;
 }
 
-async function handleFormSubmit(event, formType, profileEmail, formSubmitUrl) {
+// Render contact form (only form type needed)
+function renderProfileForm(profileEmail, formSubmitUrl) {
+    return `
+        <div class="form-preview mt-4">
+            <h3 class="text-xl font-semibold mb-4 text-white">Contact Request Form</h3>
+            <form class="form-container" data-submit-url="${escapeHtml(formSubmitUrl)}" novalidate>
+                <div class="mb-4">
+                    <input 
+                        type="text" 
+                        name="name" 
+                        placeholder="Your Name" 
+                        class="w-full p-3 bg-transparent text-white border border-white/50 rounded-lg focus:outline-none focus:border-white"
+                        required
+                        pattern="^[a-zA-Z\\s'-]{2,50}$"
+                        title="Please enter a valid name (2-50 characters)"
+                    >
+                </div>
+                
+                <div class="mb-4">
+                    <input 
+                        type="email" 
+                        name="email" 
+                        placeholder="Your Email" 
+                        class="w-full p-3 bg-transparent text-white border border-white/50 rounded-lg focus:outline-none focus:border-white"
+                        required
+                    >
+                </div>
+                
+                <div class="mb-4">
+                    <input 
+                        type="tel" 
+                        name="phone" 
+                        placeholder="Your Phone (Optional)" 
+                        class="w-full p-3 bg-transparent text-white border border-white/50 rounded-lg focus:outline-none focus:border-white"
+                        pattern="^[\\d\\s\\+\\(\\)\\-]{0,20}$"
+                        title="Please enter a valid phone number"
+                    >
+                </div>
+                
+                <div class="mb-4">
+                    <textarea 
+                        name="message" 
+                        placeholder="Your Message/Inquiry" 
+                        class="w-full p-3 bg-transparent text-white border border-white/50 rounded-lg focus:outline-none focus:border-white"
+                        required
+                        minlength="10"
+                        maxlength="500"
+                    ></textarea>
+                    <div class="text-xs text-gray-400 mt-1" data-length-counter>0/500</div>
+                </div>
+                
+                <input type="hidden" name="form_type" value="contact">
+                <input type="hidden" name="profile_email" value="${escapeHtml(profileEmail)}">
+                
+                <button type="submit" class="w-full p-3 bg-white text-black rounded-lg hover:bg-gray-200 transition-colors">
+                    Submit
+                </button>
+            </form>
+        </div>
+    `;
+}
+
+// Handle form submission
+async function handleFormSubmit(event) {
     event.preventDefault();
     
     const form = event.target;
-    const formData = new FormData(form);
     const submitBtn = form.querySelector('button[type="submit"]');
     const originalBtnText = submitBtn.innerHTML;
     
     try {
+        // Validate form
+        if (!form.checkValidity()) {
+            form.reportValidity();
+            return;
+        }
+
         // Show loading state
         submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
         submitBtn.disabled = true;
         
-        // Add metadata
-        formData.append('form_type', formType);
-        formData.append('profile_email', profileEmail);
+        // Prepare form data
+        const formData = new FormData(form);
         formData.append('profile_link', window.location.hash.substring(1));
         formData.append('submitted_at', new Date().toISOString());
         
-        // Send to Google Apps Script
-        const response = await fetch(formSubmitUrl || form.getAttribute('data-submit-url'), {
+        // Submit to backend
+        const response = await fetch(form.dataset.submitUrl, {
             method: 'POST',
             body: formData
         });
         
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
+        if (!response.ok) throw new Error('Server error. Please try again.');
         
         const result = await response.json();
+        if (result.status === "error") throw new Error(result.message || 'Submission failed');
         
-        if (result.status === "error") {
-            throw new Error(result.message);
-        }
-        
-        // Show success message
+        // Success message
         await Swal.fire({
             icon: 'success',
-            title: 'Success!',
-            text: result.message || 'Thank you for your submission',
+            title: 'Message Sent!',
+            text: 'Thank you for your submission',
             background: '#1a1a1a',
-            color: '#fff'
+            color: '#fff',
+            timer: 3000
         });
         
-        // Reset form
         form.reset();
         
     } catch (error) {
-        console.error('Form submission error:', error);
         await Swal.fire({
             icon: 'error',
-            title: 'Submission Failed',
-            text: error.message || 'There was an error submitting your form',
+            title: 'Error',
+            text: error.message || 'Could not submit form',
             background: '#1a1a1a',
             color: '#fff'
         });
     } finally {
-        // Reset button state
         submitBtn.innerHTML = originalBtnText;
         submitBtn.disabled = false;
     }
 }
+
+// Initialize form after rendering
+function initContactForm(formContainer) {
+    const form = formContainer.querySelector('form');
+    if (!form) return;
+
+    // Character counter for message textarea
+    const textarea = form.querySelector('textarea');
+    const counter = form.querySelector('[data-length-counter]');
+    
+    if (textarea && counter) {
+        textarea.addEventListener('input', () => {
+            counter.textContent = `${textarea.value.length}/${textarea.maxLength}`;
+        });
+    }
+
+    form.addEventListener('submit', handleFormSubmit);
+}
+
 function renderSocialLinks(links) {
     if (!links || typeof links !== 'string') return '';
 
