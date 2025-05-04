@@ -3,6 +3,7 @@ document.addEventListener("DOMContentLoaded", function() {
     const CONFIG = {
         defaultBg: "url(https://tccards.tn/Assets/bg.png) center fixed",
         defaultProfilePic: "https://tccards.tn/Assets/default.png",
+        submitUrl: "https://script.google.com/macros/s/.........../exec",  
         databases: [
             {
                 id: 'AKfycbzPv8Rr4jM6Fcyjm6uelUtqw2hHLCFWYhXJlt6nWTIKaqUL_9j_41rwzhFGMlkF2nrG',
@@ -134,8 +135,7 @@ function renderProfileCard(data) {
         socialLinks: data['Social Links'] || '',
         email: data.Email || '',
         phone: data.Phone || '',
-        address: data.Address || '',
-        formSubmitUrl: data['Form Submit URL'] || 'https://script.google.com/macros/s/AKfycbxU8axs4Xduqc84jj_utLsi-pCxSEyw9exEO7PuNo940qQ1bJ4-NxREnUgVhdzS9plb/exec'
+        address: data.Address || ''
     };
 
     // Apply background style if available
@@ -153,17 +153,6 @@ function renderProfileCard(data) {
                 handleFormSubmit(e, profileData.formType, profileData.email, profileData.formSubmitUrl);
             });
         }
-    }
-
-    // Show success notification
-    if (typeof Swal !== 'undefined') {
-        Swal.fire({
-            icon: 'success',
-            title: `Welcome to ${profileData.name}'s profile`,
-            text: 'Tap to interact with the profile',
-            background: '#1a1a1a',
-            color: '#fff'
-        });
     }
 }
 
@@ -196,10 +185,9 @@ function createProfileCardHTML(profileData, selectedStyle) {
             <h2>${escapeHtml(profileData.name)}</h2>
             ${profileData.tagline ? `<p>${escapeHtml(profileData.tagline)}</p>` : ''}
             
-            ${profileData.form? 
-                `<div id="form-preview" class="mt-4">
-                    ${renderProfileForm(profileData.form, profileData.formSubmitUrl)}
-                </div>` : ''}
+            <div id="form-preview" class="mt-4">
+                ${renderProfileForm(profileData.form, CONFIG.submitUrl)}
+            </div>
             
             ${renderSocialLinks(profileData.socialLinks)}
             
@@ -222,145 +210,196 @@ function createProfileCardHTML(profileData, selectedStyle) {
     `;
 }
 
-// Render contact form (only form type needed)
+// Updated form rendering for AppScript mail integration
 function renderProfileForm(profileEmail, formSubmitUrl) {
     return `
         <div class="form-preview mt-4">
             <h3 class="text-xl font-semibold mb-4 text-white">Contact Request Form</h3>
             <form class="form-container" data-submit-url="${escapeHtml(formSubmitUrl)}" novalidate>
-                <div class="mb-4">
+                <div class="form-group mb-4">
                     <input 
                         type="text" 
                         name="name" 
                         placeholder="Your Name" 
-                        class="w-full p-3 bg-transparent text-white border border-white/50 rounded-lg focus:outline-none focus:border-white"
+                        class="form-input w-full p-3 bg-transparent text-white border border-white/50 rounded-lg focus:outline-none focus:border-white"
                         required
-                        pattern="^[a-zA-Z\\s'-]{2,50}$"
-                        title="Please enter a valid name (2-50 characters)"
+                        minlength="2"
+                        maxlength="50"
                     >
+                    <div class="error-message text-red-400 text-sm mt-1 hidden">Please enter your name</div>
                 </div>
                 
-                <div class="mb-4">
+                <div class="form-group mb-4">
                     <input 
                         type="email" 
                         name="email" 
                         placeholder="Your Email" 
-                        class="w-full p-3 bg-transparent text-white border border-white/50 rounded-lg focus:outline-none focus:border-white"
+                        class="form-input w-full p-3 bg-transparent text-white border border-white/50 rounded-lg focus:outline-none focus:border-white"
                         required
                     >
+                    <div class="error-message text-red-400 text-sm mt-1 hidden">Please enter a valid email</div>
                 </div>
                 
-                <div class="mb-4">
+                <div class="form-group mb-4">
                     <input 
                         type="tel" 
                         name="phone" 
                         placeholder="Your Phone (Optional)" 
-                        class="w-full p-3 bg-transparent text-white border border-white/50 rounded-lg focus:outline-none focus:border-white"
-                        pattern="^[\\d\\s\\+\\(\\)\\-]{0,20}$"
-                        title="Please enter a valid phone number"
+                        class="form-input w-full p-3 bg-transparent text-white border border-white/50 rounded-lg focus:outline-none focus:border-white"
                     >
                 </div>
                 
-                <div class="mb-4">
+                <div class="form-group mb-4">
                     <textarea 
                         name="message" 
                         placeholder="Your Message/Inquiry" 
-                        class="w-full p-3 bg-transparent text-white border border-white/50 rounded-lg focus:outline-none focus:border-white"
+                        class="form-input w-full p-3 bg-transparent text-white border border-white/50 rounded-lg focus:outline-none focus:border-white"
                         required
                         minlength="10"
                         maxlength="500"
                     ></textarea>
-                    <div class="text-xs text-gray-400 mt-1" data-length-counter>0/500</div>
+                    <div class="flex justify-between">
+                        <div class="error-message text-red-400 text-sm mt-1 hidden">Message must be 10-500 characters</div>
+                        <div class="text-xs text-gray-400 mt-1" data-length-counter>0/500</div>
+                    </div>
                 </div>
                 
-                <input type="hidden" name="form_type" value="contact">
-                <input type="hidden" name="profile_email" value="${escapeHtml(profileEmail)}">
+                <!-- Hidden fields for AppScript processing -->
+                <input type="hidden" name="action" value="sendContactEmail">
+                <input type="hidden" name="recipient" value="${escapeHtml(profileEmail)}">
+                <input type="hidden" name="subject" value="New contact from your digital profile">
                 
-                <button type="submit" class="w-full p-3 bg-white text-black rounded-lg hover:bg-gray-200 transition-colors">
-                    Submit
+                <button type="submit" class="submit-btn w-full p-3 bg-white text-black rounded-lg hover:bg-gray-200 transition-colors">
+                    Send Message
                 </button>
             </form>
         </div>
     `;
 }
+function validateForm(form) {
+    // 1. Required fields check
+    const nameValid = form.name.value.trim().length >= 2;
+    const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.value);
+    const messageValid = form.message.value.trim().length >= 10;
 
-// Handle form submission
-async function handleFormSubmit(event) {
-    event.preventDefault();
-    
-    const form = event.target;
-    const submitBtn = form.querySelector('button[type="submit"]');
-    const originalBtnText = submitBtn.innerHTML;
-    
-    try {
-        // Validate form
-        if (!form.checkValidity()) {
-            form.reportValidity();
-            return;
-        }
+    // 2. Visual feedback
+    form.name.style.borderColor = nameValid ? '' : 'red';
+    form.email.style.borderColor = emailValid ? '' : 'red';
+    form.message.style.borderColor = messageValid ? '' : 'red';
+    form.querySelector('[data-length-counter]').textContent = `${form.message.value.length}/500`;
 
-        // Show loading state
-        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
-        submitBtn.disabled = true;
-        
-        // Prepare form data
-        const formData = new FormData(form);
-        formData.append('profile_link', window.location.hash.substring(1));
-        formData.append('submitted_at', new Date().toISOString());
-        
-        // Submit to backend
-        const response = await fetch(form.dataset.submitUrl, {
-            method: 'POST',
-            body: formData
-        });
-        
-        if (!response.ok) throw new Error('Server error. Please try again.');
-        
-        const result = await response.json();
-        if (result.status === "error") throw new Error(result.message || 'Submission failed');
-        
-        // Success message
-        await Swal.fire({
-            icon: 'success',
-            title: 'Message Sent!',
-            text: 'Thank you for your submission',
-            background: '#1a1a1a',
-            color: '#fff',
-            timer: 3000
-        });
-        
-        form.reset();
-        
-    } catch (error) {
-        await Swal.fire({
-            icon: 'error',
-            title: 'Error',
-            text: error.message || 'Could not submit form',
-            background: '#1a1a1a',
-            color: '#fff'
-        });
-    } finally {
-        submitBtn.innerHTML = originalBtnText;
-        submitBtn.disabled = false;
-    }
+
+    return nameValid && emailValid && messageValid;
 }
 
-// Initialize form after rendering
-function initContactForm(formContainer) {
-    const form = formContainer.querySelector('form');
-    if (!form) return;
+async function handleFormSubmit(event) {
+    event.preventDefault();
+    const form = event.target;
 
-    // Character counter for message textarea
-    const textarea = form.querySelector('textarea');
-    const counter = form.querySelector('[data-length-counter]');
-    
-    if (textarea && counter) {
-        textarea.addEventListener('input', () => {
-            counter.textContent = `${textarea.value.length}/${textarea.maxLength}`;
+    // 1. Validate inputs (EXIT EARLY IF INVALID)
+    if (!validateForm(form)) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Complete all fields properly',
+            text: '• Name (2+ chars)\n• Valid email\n• Message (10+ chars)',
+            background: '#1a1a1a'
         });
+        return;
     }
 
-    form.addEventListener('submit', handleFormSubmit);
+    // 2. Proceed with submission
+    const submitBtn = form.querySelector('.submit-btn');
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    submitBtn.disabled = true;
+
+    try {
+        const response = await fetch(form.dataset.submitUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: 'sendContactEmail',
+                name: form.name.value.trim(),
+                email: form.email.value.trim(),
+                phone: form.phone.value.trim() || null,
+                message: form.message.value.trim(),
+                recipient: form.recipient.value,
+                subject: `New message from ${form.name.value.trim()}`,
+                profileUrl: window.location.href
+            })
+        });
+
+        if (!response.ok) throw new Error('Server error');
+        
+        form.reset();
+        Swal.fire({ icon: 'success', title: 'Sent!', background: '#1a1a1a', timer: 1500 });
+    } catch (error) {
+        Swal.fire({ icon: 'error', title: 'Failed', text: 'Try again later', background: '#1a1a1a' });
+    } finally {
+        submitBtn.innerHTML = 'Send Message';
+        submitBtn.disabled = false;
+        form.querySelector('.error-message').classList.add('hidden');
+        form.reset();
+        form.querySelector('[data-length-counter]').textContent = '0/500';
+    }
+
+//======== CODE FOR THE FORM SUBMISSION ========//
+            // function doPost(e) {
+            //     try {
+            //     const data = JSON.parse(e.postData.contents);
+                
+            //     // Validate required fields
+            //     if (!data.recipient || !data.name || !data.email || !data.message) {
+            //         return ContentService.createTextOutput(
+            //         JSON.stringify({ 
+            //             status: "error", 
+            //             message: "Missing required fields" 
+            //         })
+            //         ).setMimeType(ContentService.MimeType.JSON);
+            //     }
+                
+
+            //     const emailBody = `
+            //     📬 New Contact From Your Digital Profile
+            
+            //     👤 Name: ${data.name}
+            //     ✉️ Email: ${data.email}
+            //     📞 Phone: ${data.phone || "Not provided"}
+            
+            //     🌐 Profile Link: ${data.profileUrl || "Not provided"}
+            
+            //     💬 Message:
+            //     ${data.message}
+            
+            //     ⏰ Received: ${new Date().toLocaleString()}`;
+                
+            //     // Send email to profile owner
+            //     MailApp.sendEmail({
+            //         to: data.recipient,
+            //         subject: data.subject || "New contact from your digital profile",
+            //         body: emailBody,
+            //         replyTo: data.email, // Allows direct reply to visitor
+            //         name: "TC Cards Notification" // Sender name
+            //     });
+                
+            //     return ContentService.createTextOutput(
+            //         JSON.stringify({ 
+            //         status: "success", 
+            //         message: "Email sent successfully" 
+            //         })
+            //     ).setMimeType(ContentService.MimeType.JSON);
+                
+            //     } catch (error) {
+            //     console.error("Form processing error:", error);
+            //     return ContentService.createTextOutput(
+            //         JSON.stringify({ 
+            //         status: "error", 
+            //         message: error.toString() 
+            //         })
+            //     ).setMimeType(ContentService.MimeType.JSON);
+            //     }
+            // }
+//======== END OF FORM SUBMISSION CODE ========//
+
 }
 
 function renderSocialLinks(links) {
