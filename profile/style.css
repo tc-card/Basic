@@ -3,6 +3,21 @@
     max-width: 600px;
     width: 100%;
 }
+
+/* Add this media query for larger screens */
+@media screen and (min-width: 1024px) {
+    .card-container {
+        max-width: 800px; /* Increased from 600px */
+    }
+}
+
+/* For even larger screens */
+@media screen and (min-width: 1440px) {
+    .card-container {
+        max-width: 1000px; /* Further increased for very large screens */
+    }
+}
+
 .card-container h2{
     box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
     background: rgba(17, 24, 39, 0.7);
