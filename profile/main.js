@@ -211,66 +211,71 @@ function createProfileCardHTML(profileData, selectedStyle) {
     `;
 }
 
-// Updated form rendering for AppScript mail integration
 function renderProfileForm(profileEmail, formSubmitUrl) {
     return `
-        <div class="form-preview mt-4">
-            <h3 class="text-xl font-semibold mb-4 text-white">Contact Request Form</h3>
-            <form class="form-container" data-submit-url="${escapeHtml(formSubmitUrl)}" novalidate>
-                <div class="form-group mb-4">
+    <script src="https://cdn.tailwindcss.com"></script>
+        <div class="mt-6 p-6 bg-gray-800/50 backdrop-blur-lg rounded-xl shadow-xl">
+            <h3 class="text-xl font-semibold mb-6 text-white text-center">Contact Form</h3>
+            <form class="space-y-4" data-submit-url="${escapeHtml(formSubmitUrl)}" novalidate>
+                <!-- Name Field -->
+                <div>
                     <input 
                         type="text" 
                         name="name" 
                         placeholder="Your Name" 
-                        class="form-input w-full p-3 bg-transparent text-white border border-white/50 rounded-lg focus:outline-none focus:border-white"
+                        class="w-full px-4 py-3 bg-gray-700/50 text-white border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                         required
                         minlength="2"
                         maxlength="50"
                     >
-                    <div class="error-message text-red-400 text-sm mt-1 hidden">Please enter your name</div>
+                    <div class="text-red-400 text-sm mt-1 hidden">Please enter your name</div>
                 </div>
                 
-                <div class="form-group mb-4">
+                <!-- Email Field -->
+                <div>
                     <input 
                         type="email" 
                         name="email" 
                         placeholder="Your Email" 
-                        class="form-input w-full p-3 bg-transparent text-white border border-white/50 rounded-lg focus:outline-none focus:border-white"
+                        class="w-full px-4 py-3 bg-gray-700/50 text-white border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                         required
                     >
-                    <div class="error-message text-red-400 text-sm mt-1 hidden">Please enter a valid email</div>
+                    <div class="text-red-400 text-sm mt-1 hidden">Please enter a valid email</div>
                 </div>
                 
-                <div class="form-group mb-4">
+                <!-- Phone Field -->
+                <div>
                     <input 
                         type="tel" 
                         name="phone" 
                         placeholder="Your Phone (Optional)" 
-                        class="form-input w-full p-3 bg-transparent text-white border border-white/50 rounded-lg focus:outline-none focus:border-white"
+                        class="w-full px-4 py-3 bg-gray-700/50 text-white border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                     >
                 </div>
                 
-                <div class="form-group mb-4">
+                <!-- Message Field -->
+                <div>
                     <textarea 
                         name="message" 
                         placeholder="Your Message/Inquiry" 
-                        class="form-input w-full p-3 bg-transparent text-white border border-white/50 rounded-lg focus:outline-none focus:border-white"
+                        class="w-full px-4 py-3 bg-gray-700/50 text-white border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all min-h-[120px]"
                         required
                         minlength="10"
                         maxlength="500"
                     ></textarea>
-                    <div class="flex justify-between">
-                        <div class="error-message text-red-400 text-sm mt-1 hidden">Message must be 10-500 characters</div>
-                        <div class="text-xs text-gray-400 mt-1" data-length-counter>0/500</div>
+                    <div class="flex justify-between mt-1">
+                        <div class="text-red-400 text-sm hidden">Message must be 10-500 characters</div>
+                        <div class="text-xs text-gray-400" data-length-counter>0/500</div>
                     </div>
                 </div>
                 
-                <!-- Hidden fields for AppScript processing -->
+                <!-- Hidden Fields -->
                 <input type="hidden" name="action" value="sendContactEmail">
                 <input type="hidden" name="recipient" value="${escapeHtml(profileEmail)}">
                 <input type="hidden" name="subject" value="New contact from your digital profile">
                 
-                <button type="submit" class="submit-btn w-full p-3 bg-white text-black rounded-lg hover:bg-gray-200 transition-colors">
+                <!-- Submit Button -->
+                <button type="submit" class="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-800">
                     Send Message
                 </button>
             </form>
