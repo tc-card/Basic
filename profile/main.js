@@ -2,7 +2,7 @@
 const CONFIG = {
     defaultBg: "url(https://tccards.tn/Assets/bg.png) center fixed",
     defaultProfilePic: "https://tccards.tn/Assets/default.png",
-    submitUrl: "https://script.google.com/macros/s/.........../exec",  
+    submitUrl: "https://script.google.com/macros/s/AKfycbzBI6WskjhTpezrIbUcveqY_EW8IJ5PUMQ0Aby6FJhpqo4sV-KfPtC3S668aNA7nYOL/exec",  
     databases: [
         {
             id: 'AKfycbzPv8Rr4jM6Fcyjm6uelUtqw2hHLCFWYhXJlt6nWTIKaqUL_9j_41rwzhFGMlkF2nrG',
@@ -214,7 +214,6 @@ function createProfileCardHTML(profileData, selectedStyle) {
 function renderProfileForm(profileEmail, formSubmitUrl) {
     return `
     <script src="https://cdn.tailwindcss.com"></script>
-        <div class="mt-6 p-6 bg-gray-800/50 backdrop-blur-lg rounded-xl shadow-xl">
             <h3 class="text-xl font-semibold mb-6 text-white text-center">Contact Form</h3>
             <form class="space-y-4" data-submit-url="${escapeHtml(formSubmitUrl)}" novalidate>
                 <!-- Name Field -->
@@ -265,7 +264,7 @@ function renderProfileForm(profileEmail, formSubmitUrl) {
                     ></textarea>
                     <div class="flex justify-between mt-1">
                         <div class="text-red-400 text-sm hidden">Message must be 10-500 characters</div>
-                        <div class="text-xs text-gray-400" data-length-counter>0/500</div>
+                        <div class="text-xs text-gray-400" data-counter>0/500</div>
                     </div>
                 </div>
                 
@@ -279,7 +278,6 @@ function renderProfileForm(profileEmail, formSubmitUrl) {
                     Send Message
                 </button>
             </form>
-        </div>
     `;
 }
 function validateForm(form) {
@@ -292,14 +290,13 @@ function validateForm(form) {
     form.name.style.borderColor = nameValid ? '' : 'red';
     form.email.style.borderColor = emailValid ? '' : 'red';
     form.message.style.borderColor = messageValid ? '' : 'red';
-    form.querySelector('[data-length-counter]').textContent = `${form.message.value.length}/500`;
 
 
     return nameValid && emailValid && messageValid;
 }
 // Add to your form initialization code
 document.querySelector('textarea').addEventListener('input', function(e) {
-    const counter = e.target.parentElement.querySelector('[data-length-counter]');
+    const counter = e.target.parentElement.querySelector('[data-counter]');
     if (counter) {
         counter.textContent = `${e.target.value.length}/500`;
         if (e.target.value.length > 500) {
@@ -589,6 +586,7 @@ async function copyContactDetails(contact) {
         await navigator.clipboard.writeText(contactText);
         await Swal.fire({
             icon: 'success',
+            title: 'Copied!',
             toast: true,
             position: 'center',
             showConfirmButton: false,
@@ -676,7 +674,6 @@ function showShareOptions(link) {
                         <i class="fab fa-snapchat-ghost"></i>
                     </button>
                 </div>
-                <img src="https://www.gstatic.com/identity/boq/accountsettingsmobile/family_createfamily_large_250307_316x112_f9503fcb7d9c17b775c20b665d1d3401.png" alt="TC Cards" class="tc-cards-share-banner">
                 <div class="tc-signup-cta">
                     <button class="tc-signup-btn" onclick="window.location.href='https://tccards.tn/plans/free'">
                         Sign up free
