@@ -186,11 +186,11 @@ function createProfileCardHTML(profileData, selectedStyle) {
             <h2>${escapeHtml(profileData.name)}</h2>
             ${profileData.tagline ? `<p>${escapeHtml(profileData.tagline)}</p>` : ''}
             
+            ${renderSocialLinks(profileData.socialLinks)}
+                        
             <div id="form-preview" class="mt-4">
                 ${renderProfileForm(profileData.form, CONFIG.submitUrl)}
             </div>
-            
-            ${renderSocialLinks(profileData.socialLinks)}
             
             ${(profileData.email || profileData.phone || profileData.address) ? 
                 `<button class="contact-btn" onclick="showContactDetails(${escapeHtml(JSON.stringify({
