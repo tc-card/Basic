@@ -191,7 +191,7 @@ function createProfileCardHTML(profileData, selectedStyle) {
             <div id="form-preview" class="mt-4">
                 ${renderProfileForm(profileData.form, CONFIG.submitUrl)}
             </div>
-            
+
             ${(profileData.email || profileData.phone || profileData.address) ? 
                 `<button class="contact-btn" onclick="showContactDetails(${escapeHtml(JSON.stringify({
                     name: profileData.name,
@@ -587,15 +587,13 @@ async function copyContactDetails(contact) {
         ].filter(Boolean).join('\n');
 
         await navigator.clipboard.writeText(contactText);
-
         await Swal.fire({
             icon: 'success',
-            title: 'Copied!',
-            text: 'Contact details copied to clipboard',
             toast: true,
-            position: 'bottom',
+            position: 'center',
             showConfirmButton: false,
             timer: 2000,
+            timerProgressBar: true,
             background: '#1a1a1a',
             color: '#fff'
         });
