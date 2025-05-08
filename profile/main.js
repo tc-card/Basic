@@ -1,20 +1,21 @@
-document.addEventListener("DOMContentLoaded", function() {
-    // Configuration - moved to top for easy maintenance
-    const CONFIG = {
-        defaultBg: "url(https://tccards.tn/Assets/bg.png) center fixed",
-        defaultProfilePic: "https://tccards.tn/Assets/default.png",
-        submitUrl: "https://script.google.com/macros/s/.........../exec",  
-        databases: [
-            {
-                id: 'AKfycbzPv8Rr4jM6Fcyjm6uelUtqw2hHLCFWYhXJlt6nWTIKaqUL_9j_41rwzhFGMlkF2nrG',
-                plan: 'basic'
-            }
-        ],
-        styles: {
-            corporateGradient: { background: 'linear-gradient(145deg, rgb(9, 9, 11), rgb(24, 24, 27), rgb(9, 9, 11))' },
-            oceanGradient: { background: 'linear-gradient(145deg, rgb(2, 6, 23), rgb(15, 23, 42), rgb(2, 6, 23))' },
+// Configuration - moved to top for easy maintenance
+const CONFIG = {
+    defaultBg: "url(https://tccards.tn/Assets/bg.png) center fixed",
+    defaultProfilePic: "https://tccards.tn/Assets/default.png",
+    submitUrl: "https://script.google.com/macros/s/.........../exec",  
+    databases: [
+        {
+            id: 'AKfycbzPv8Rr4jM6Fcyjm6uelUtqw2hHLCFWYhXJlt6nWTIKaqUL_9j_41rwzhFGMlkF2nrG',
+            plan: 'basic'
         }
-    };
+    ],
+    styles: {
+        corporateGradient: { background: 'linear-gradient(145deg, rgb(9, 9, 11), rgb(24, 24, 27), rgb(9, 9, 11))' },
+        oceanGradient: { background: 'linear-gradient(145deg, rgb(2, 6, 23), rgb(15, 23, 42), rgb(2, 6, 23))' },
+    }
+};
+
+document.addEventListener("DOMContentLoaded", function() {
 
     // Set initial background
     document.body.style.background = CONFIG.defaultBg;
