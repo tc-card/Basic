@@ -292,6 +292,18 @@ function validateForm(form) {
 
     return nameValid && emailValid && messageValid;
 }
+// Add to your form initialization code
+document.querySelector('textarea').addEventListener('input', function(e) {
+    const counter = e.target.parentElement.querySelector('[data-length-counter]');
+    if (counter) {
+        counter.textContent = `${e.target.value.length}/500`;
+        if (e.target.value.length > 500) {
+            counter.style.color = '#f87171';
+        } else {
+            counter.style.color = 'rgba(255, 255, 255, 0.5)';
+        }
+    }
+});
 
 async function handleFormSubmit(event) {
     event.preventDefault();
@@ -409,6 +421,10 @@ function renderSocialLinks(links) {
     // Map of domains to their corresponding Font Awesome icons
     const platformIcons = {
         'facebook.com': 'fab fa-facebook',
+        'fb.com': 'fab fa-facebook',
+        'fb.me': 'fab fa-facebook',
+        'messenger.com': 'fab fa-facebook-messenger',
+        'm.me':'fab fa-facebook-messenger',
         'twitter.com': 'fab fa-twitter', 
         'x.com': 'fab fa-x-twitter',
         'instagram.com': 'fab fa-instagram',

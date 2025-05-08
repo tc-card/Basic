@@ -193,6 +193,124 @@ p {
     background-color: #1e40af;
 }
 
+/* FORM CONTAINER STYLES */
+.form-preview {
+    width: 100%;
+    margin-top: 1.5rem;
+    animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.form-container {
+    background: rgba(17, 24, 39, 0.7);
+    backdrop-filter: blur(10px);
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+}
+
+/* INPUT FIELD STYLES */
+.form-group {
+    margin-bottom: 1.25rem;
+    position: relative;
+}
+
+.form-input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    background: rgba(255, 255, 255, 0.05) !important;
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    font-size: 0.95rem;
+    transition: all 0.3s ease;
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: rgba(59, 130, 246, 0.8);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+}
+
+.form-input::placeholder {
+    color: rgba(255, 255, 255, 0.4);
+}
+
+/* ERROR STATES */
+.form-input.invalid {
+    border-color: #f87171;
+}
+
+.error-message {
+    color: #f87171;
+    font-size: 0.8rem;
+    margin-top: 0.25rem;
+    display: none;
+}
+
+.error-message.visible {
+    display: block;
+}
+
+/* TEXTAREA SPECIFIC */
+textarea.form-input {
+    min-height: 120px;
+    resize: vertical;
+}
+
+[data-length-counter] {
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.75rem;
+}
+
+/* SUBMIT BUTTON */
+.submit-btn {
+    width: 100%;
+    padding: 0.75rem;
+    background: #2563eb;
+    color: white;
+    font-weight: 500;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-top: 0.5rem;
+    font-size: 1rem;
+}
+
+.submit-btn:hover {
+    background: #1d4ed8;
+    transform: translateY(-1px);
+}
+
+.submit-btn:active {
+    transform: translateY(0);
+}
+
+.submit-btn:disabled {
+    background: #64748b;
+    cursor: not-allowed;
+    transform: none !important;
+}
+
+/* VALIDATION STATES */
+.form-input:invalid:not(:focus):not(:placeholder-shown) {
+    border-color: #f87171;
+}
+
+.form-input:invalid:not(:focus):not(:placeholder-shown) + .error-message {
+    display: block;
+}
+
+/* PHONE INPUT SPECIFIC */
+input[type="tel"].form-input {
+    letter-spacing: 0.5px;
+}
+
 .contact-details-container {
     padding: 1.5rem;
     border-radius: 12px;
