@@ -1,180 +1,201 @@
 // Configuration - moved to top for easy maintenance
 const CONFIG = {
-    defaultBg: "url(https://tccards.tn/Assets/bg.png) center fixed",
-    defaultProfilePic: "https://tccards.tn/Assets/default.png",
-    submitUrl: "https://script.google.com/macros/s/AKfycbzBI6WskjhTpezrIbUcveqY_EW8IJ5PUMQ0Aby6FJhpqo4sV-KfPtC3S668aNA7nYOL/exec",  
-    databases: [
-        {
-            id: 'AKfycbzPv8Rr4jM6Fcyjm6uelUtqw2hHLCFWYhXJlt6nWTIKaqUL_9j_41rwzhFGMlkF2nrG',
-            plan: 'basic'
-        }
-    ],
-    styles: {
-        corporateGradient: { background: 'linear-gradient(145deg, rgb(9, 9, 11), rgb(24, 24, 27), rgb(9, 9, 11))' },
-        oceanGradient: { background: 'linear-gradient(145deg, rgb(2, 6, 23), rgb(15, 23, 42), rgb(2, 6, 23))' },
-    }
+  defaultBg: "url(https://tccards.tn/Assets/bg.png) center fixed",
+  defaultProfilePic: "https://tccards.tn/Assets/default.png",
+  submitUrl:
+    "https://script.google.com/macros/s/AKfycbzBI6WskjhTpezrIbUcveqY_EW8IJ5PUMQ0Aby6FJhpqo4sV-KfPtC3S668aNA7nYOL/exec",
+  databases: [
+    {
+      id: "AKfycbzPv8Rr4jM6Fcyjm6uelUtqw2hHLCFWYhXJlt6nWTIKaqUL_9j_41rwzhFGMlkF2nrG",
+      plan: "basic",
+    },
+  ],
+  styles: {
+    corporateGradient: {
+      background:
+        "linear-gradient(145deg, rgb(9, 9, 11), rgb(24, 24, 27), rgb(9, 9, 11))",
+    },
+    oceanGradient: {
+      background:
+        "linear-gradient(145deg, rgb(2, 6, 23), rgb(15, 23, 42), rgb(2, 6, 23))",
+    },
+  },
 };
 
-document.addEventListener("DOMContentLoaded", function() {
+document.addEventListener("DOMContentLoaded", function () {
+  // Set initial background
+  document.body.style.background = CONFIG.defaultBg;
+  document.body.style.backgroundSize = "cover";
+  document.body.style.backdropFilter = "blur(5px)";
 
-    // Set initial background
-    document.body.style.background = CONFIG.defaultBg;
-    document.body.style.backgroundSize = "cover";
-    document.body.style.backdropFilter = "blur(5px)";
-    
-    // Extract identifier from URL hash
-    const hash = window.location.hash.substring(1);
-    if (!hash) {
-        showError("No profile link provided");
-        return;
-    }
+  // Extract identifier from URL hash
+  const hash = window.location.hash.substring(1);
+  if (!hash) {
+    showError("No profile link provided");
+    return;
+  }
 
-    // Update URL without reload
-    const newUrl = `https://card.tccards.tn/@${hash}`;
-    window.history.replaceState(null, null, newUrl);
+  // Update URL without reload
+  const newUrl = `https://card.tccards.tn/@${hash}`;
+  window.history.replaceState(null, null, newUrl);
 
-    // Determine lookup type and start search
-    const isIdLookup = hash.startsWith('id_');
-    const identifier = isIdLookup ? hash.split('_')[1] : hash;
-    
-    searchDatabases(CONFIG.databases, identifier, isIdLookup);
+  // Determine lookup type and start search
+  const isIdLookup = hash.startsWith("id_");
+  const identifier = isIdLookup ? hash.split("_")[1] : hash;
+
+  searchDatabases(CONFIG.databases, identifier, isIdLookup);
 });
 
 // Improved database search with better error handling
 async function searchDatabases(databases, identifier, isIdLookup, index = 0) {
-    try {
-        if (index >= databases.length) {
-            showError("Profile not found in any database");
-            return;
-        }
-
-        const db = databases[index];
-        const param = isIdLookup ? 'id' : 'link';
-        const url = `https://script.google.com/macros/s/${db.id}/exec?${param}=${encodeURIComponent(identifier)}`;
-        
-        const response = await fetchWithTimeout(url, {
-            timeout: 5000 // 5 second timeout
-        });
-        
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-        
-        const data = await response.json();
-        
-        if (data?.status === "error") {
-            return searchDatabases(databases, identifier, isIdLookup, index + 1);
-        }
-        
-        if (data && typeof data === 'object') {
-            handleProfileData(data);
-        } else {
-            searchDatabases(databases, identifier, isIdLookup, index + 1);
-        }
-    } catch (error) {
-        console.error("Database search error:", error);
-        searchDatabases(databases, identifier, isIdLookup, index + 1);
+  try {
+    if (index >= databases.length) {
+      showError("Profile not found in any database");
+      return;
     }
+
+    const db = databases[index];
+    const param = isIdLookup ? "id" : "link";
+    const url = `https://script.google.com/macros/s/${
+      db.id
+    }/exec?${param}=${encodeURIComponent(identifier)}`;
+
+    const response = await fetchWithTimeout(url, {
+      timeout: 5000, // 5 second timeout
+    });
+
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+    const data = await response.json();
+
+    if (data?.status === "error") {
+      return searchDatabases(databases, identifier, isIdLookup, index + 1);
+    }
+
+    if (data && typeof data === "object") {
+      handleProfileData(data);
+    } else {
+      searchDatabases(databases, identifier, isIdLookup, index + 1);
+    }
+  } catch (error) {
+    console.error("Database search error:", error);
+    searchDatabases(databases, identifier, isIdLookup, index + 1);
+  }
 }
 
 // Helper function with timeout
 async function fetchWithTimeout(resource, options = {}) {
-    const { timeout = 8000 } = options;
-    
-    const controller = new AbortController();
-    const id = setTimeout(() => controller.abort(), timeout);
-    
-    const response = await fetch(resource, {
-        ...options,
-        signal: controller.signal  
-    });
-    clearTimeout(id);
-    
-    return response;
+  const { timeout = 8000 } = options;
+
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), timeout);
+
+  const response = await fetch(resource, {
+    ...options,
+    signal: controller.signal,
+  });
+  clearTimeout(id);
+
+  return response;
 }
 
 function handleProfileData(data) {
-    try {
-        const loader = document.querySelector('.loader');
-        if (loader) loader.style.display = 'none';
-        
-        // Normalize data structure
-        data = data.data || data;
+  try {
+    const loader = document.querySelector(".loader");
+    if (loader) loader.style.display = "none";
 
-        if (!data || typeof data !== 'object') {
-            throw new Error("Invalid profile data received");
-        }
+    // Normalize data structure
+    data = data.data || data;
 
-        if (data.status === "error") {
-            throw new Error(data?.message || "Profile data could not be loaded");
-        }
-        
-        if (!data.Name) {
-            throw new Error("Invalid profile data: Name is required");
-        }
-        
-        if (data?.Status && data.Status !== "Active") {
-            throw new Error("This profile is currently inactive");
-        }
-
-        renderProfileCard(data);
-    } catch (error) {
-        console.error("Profile handling error:", error);
-        showError(error.message);
+    if (!data || typeof data !== "object") {
+      throw new Error("Invalid profile data received");
     }
+
+    if (data.status === "error") {
+      throw new Error(data?.message || "Profile data could not be loaded");
+    }
+
+    if (!data.Name) {
+      throw new Error("Invalid profile data: Name is required");
+    }
+
+    if (data?.Status && data.Status !== "Active") {
+      throw new Error("This profile is currently inactive");
+    }
+
+    renderProfileCard(data);
+  } catch (error) {
+    console.error("Profile handling error:", error);
+    showError(error.message);
+  }
 }
 
 function renderProfileCard(data) {
-    const container = document.querySelector(".card-container");
-    container.style.display = 'block';
-    
-    // Prepare profile data with defaults
-    const profileData = {
-        name: data.Name || 'User',
-        link: data.Link || 'tccards',
-        tagline: data.Tagline || '',
-        profilePic: data['Profile Picture URL'] || CONFIG.defaultProfilePic,
-        form: data['Form Form'] || '', // form email
-        socialLinks: data['Social Links'] || '',
-        email: data.Email || '',
-        phone: data.Phone || '',
-        address: data.Address || ''
-    };
+  const container = document.querySelector(".card-container");
+  container.style.display = "block";
 
-    // Apply background style if available
-    applyBackgroundStyle(data['Selected Style']);
+  // Prepare profile data with defaults
+  const profileData = {
+    name: data.Name || "User",
+    link: data.Link || "tccards",
+    tagline: data.Tagline || "",
+    profilePic: data["Profile Picture URL"] || CONFIG.defaultProfilePic,
+    form: data["Form Form"] || "", // form email
+    socialLinks: data["Social Links"] || "",
+    email: data.Email || "",
+    phone: data.Phone || "",
+    address: data.Address || "",
+  };
 
-    // Render the profile card
-    container.innerHTML = createProfileCardHTML(profileData, data['Selected Style']);
+  // Apply background style if available
+  applyBackgroundStyle(data["Selected Style"]);
 
-    // Initialize form if present
-    if (profileData.formType) {
-        const form = container.querySelector('form');
-        if (form) {
-            form.addEventListener('submit', function(e) {
-                e.preventDefault();
-                handleFormSubmit(e, profileData.formType, profileData.email, profileData.formSubmitUrl);
-            });
-        }
+  // Render the profile card
+  container.innerHTML = createProfileCardHTML(
+    profileData,
+    data["Selected Style"]
+  );
+
+  // Initialize form if present
+  if (profileData.formType) {
+    const form = container.querySelector("form");
+    if (form) {
+      form.addEventListener("submit", function (e) {
+        e.preventDefault();
+        handleFormSubmit(
+          e,
+          profileData.formType,
+          profileData.email,
+          profileData.formSubmitUrl
+        );
+      });
     }
+  }
 }
 
 function applyBackgroundStyle(selectedStyle) {
-    if (!selectedStyle) return;
+  if (!selectedStyle) return;
 
-    if (selectedStyle.startsWith('linear-gradient')) {
-        document.body.style.background = selectedStyle;
-    } else {
-        document.body.style.background = CONFIG.styles[selectedStyle]?.background || CONFIG.defaultBg;
-    }
-    document.body.style.backgroundSize = "cover";
+  if (selectedStyle.startsWith("linear-gradient")) {
+    document.body.style.background = selectedStyle;
+  } else {
+    document.body.style.background =
+      CONFIG.styles[selectedStyle]?.background || CONFIG.defaultBg;
+  }
+  document.body.style.backgroundSize = "cover";
 }
 
 function createProfileCardHTML(profileData, selectedStyle) {
-    const style = selectedStyle ? CONFIG.styles[selectedStyle]?.background : CONFIG.defaultBg;
-    
-    return `
+  const style = selectedStyle
+    ? CONFIG.styles[selectedStyle]?.background
+    : CONFIG.defaultBg;
+
+  return `
     <center>
         <div class="profile-container">
-            <div class="top-right" onclick="showShareOptions('${escapeHtml(profileData.link)}')">
+            <div class="top-right" onclick="showShareOptions('${escapeHtml(
+              profileData.link
+            )}')">
                 <i class="fas fa-share-alt"></i>
             </div>
             
@@ -184,7 +205,11 @@ function createProfileCardHTML(profileData, selectedStyle) {
              data-fallback="${escapeHtml(CONFIG.defaultProfilePic)}">
             
             <h2>${escapeHtml(profileData.name)}</h2>
-            ${profileData.tagline ? `<p>${escapeHtml(profileData.tagline)}</p>` : ''}
+            ${
+              profileData.tagline
+                ? `<p>${escapeHtml(profileData.tagline)}</p>`
+                : ""
+            }
             
             ${renderSocialLinks(profileData.socialLinks)}
                         
@@ -192,15 +217,20 @@ function createProfileCardHTML(profileData, selectedStyle) {
                 ${renderProfileForm(profileData.form, CONFIG.submitUrl)}
             </div>
 
-            ${(profileData.email || profileData.phone || profileData.address) ? 
-                `<button class="contact-btn" onclick="showContactDetails(${escapeHtml(JSON.stringify({
-                    name: profileData.name,
-                    profilePic: profileData.profilePic,
-                    email: profileData.email,
-                    phone: profileData.phone,
-                    address: profileData.address,
-                    style: style
-                }))})">Get in Touch</button>` : ''}
+            ${
+              profileData.email || profileData.phone || profileData.address
+                ? `<button class="contact-btn" onclick="showContactDetails(${escapeHtml(
+                    JSON.stringify({
+                      name: profileData.name,
+                      profilePic: profileData.profilePic,
+                      email: profileData.email,
+                      phone: profileData.phone,
+                      address: profileData.address,
+                      style: style,
+                    })
+                  )})">Get in Touch</button>`
+                : ""
+            }
 
             <footer class="footer">
                 <p>Powered by &copy; Total Connect ${new Date().getFullYear()}</p>
@@ -212,10 +242,12 @@ function createProfileCardHTML(profileData, selectedStyle) {
 }
 
 function renderProfileForm(profileEmail, formSubmitUrl) {
-    return `
+  return `
     <script src="https://cdn.tailwindcss.com"></script>
             <h3 class="text-xl font-semibold mb-6 text-white text-center">Contact Form</h3>
-            <form class="space-y-4" data-submit-url="${escapeHtml(formSubmitUrl)}" novalidate>
+            <form class="space-y-4" data-submit-url="${escapeHtml(
+              formSubmitUrl
+            )}" novalidate>
                 <!-- Name Field -->
                 <div>
                     <input 
@@ -263,14 +295,15 @@ function renderProfileForm(profileEmail, formSubmitUrl) {
                         maxlength="500"
                     ></textarea>
                     <div class="flex justify-between mt-1">
-                        <div class="text-red-400 text-sm hidden">Message must be 10-500 characters</div>
+                        <div class="text-red-400 text-sm hidden" data-error>Message must be 10-500 characters</div>
                         <div class="text-xs text-gray-400" data-counter>0/500</div>
                     </div>
                 </div>
-                
                 <!-- Hidden Fields -->
                 <input type="hidden" name="action" value="sendContactEmail">
-                <input type="hidden" name="recipient" value="${escapeHtml(profileEmail)}">
+                <input type="hidden" name="recipient" value="${escapeHtml(
+                  profileEmail
+                )}">
                 <input type="hidden" name="subject" value="New contact from your digital profile">
                 
                 <!-- Submit Button -->
@@ -281,372 +314,451 @@ function renderProfileForm(profileEmail, formSubmitUrl) {
     `;
 }
 function validateForm(form) {
-    // 1. Required fields check
-    const nameValid = form.name.value.trim().length >= 2;
-    const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.value);
-    const messageValid = form.message.value.trim().length >= 10;
+  // 1. Required fields check
+  const nameValid = form.name.value.trim().length >= 2;
+  const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.value);
+  const messageValid = form.message.value.trim().length >= 10;
 
-    // 2. Visual feedback
-    form.name.style.borderColor = nameValid ? '' : 'red';
-    form.email.style.borderColor = emailValid ? '' : 'red';
-    form.message.style.borderColor = messageValid ? '' : 'red';
+  // 2. Visual feedback
+  form.name.style.borderColor = nameValid ? "" : "red";
+  form.email.style.borderColor = emailValid ? "" : "red";
+  form.message.style.borderColor = messageValid ? "" : "red";
 
-
-    return nameValid && emailValid && messageValid;
+  return nameValid && emailValid && messageValid;
 }
 // Add to your form initialization code
-document.querySelector('textarea').addEventListener('input', function(e) {
-    const counter = e.target.parentElement.querySelector('[data-counter]');
-    if (counter) {
-        counter.textContent = `${e.target.value.length}/500`;
-        if (e.target.value.length > 500) {
-            counter.style.color = '#f87171';
-        } else {
-            counter.style.color = 'rgba(255, 255, 255, 0.5)';
+document.addEventListener("DOMContentLoaded", function () {
+  const textarea = document.querySelector('textarea[name="message"]');
+  const counter = document.querySelector("[data-counter]");
+  const errorElement = document.querySelector("[data-error]");
+
+  if (textarea && counter && errorElement) {
+    textarea.addEventListener("input", function (e) {
+      const length = e.target.value.length;
+      counter.textContent = `${length}/500`;
+
+      // Update counter color
+      if (length > 500) {
+        counter.style.color = "#f87171";
+        errorElement.classList.remove("hidden");
+      } else {
+        counter.style.color = "rgba(255, 255, 255, 0.5)";
+        errorElement.classList.add("hidden");
+      }
+
+      // Validate on the fly
+      if (length >= 10 && length <= 500) {
+        errorElement.classList.add("hidden");
+        e.target.setCustomValidity("");
+      } else {
+        e.target.setCustomValidity("Message must be 10-500 characters");
+      }
+    });
+
+    // Also validate on form submission
+    const form = textarea.closest("form");
+    if (form) {
+      form.addEventListener("submit", function (e) {
+        const length = textarea.value.length;
+        if (length < 10 || length > 500) {
+          e.preventDefault();
+          errorElement.classList.remove("hidden");
+          textarea.focus();
         }
+      });
     }
+  }
 });
-
 async function handleFormSubmit(event) {
-    event.preventDefault();
-    const form = event.target;
+  event.preventDefault();
+  const form = event.target;
 
-    // 1. Validate inputs (EXIT EARLY IF INVALID)
-    if (!validateForm(form)) {
-        Swal.fire({
-            icon: 'error',
-            title: 'Complete all fields properly',
-            text: '• Name (2+ chars)\n• Valid email\n• Message (10+ chars)',
-            background: '#1a1a1a'
-        });
-        return;
-    }
+  // 1. Validate inputs (EXIT EARLY IF INVALID)
+  if (!validateForm(form)) {
+    Swal.fire({
+      icon: "error",
+      title: "Complete all fields properly",
+      text: "• Name (2+ chars)\n• Valid email\n• Message (10+ chars)",
+      background: "#1a1a1a",
+    });
+    return;
+  }
 
-    // 2. Proceed with submission
-    const submitBtn = form.querySelector('.submit-btn');
-    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-    submitBtn.disabled = true;
+  // 2. Proceed with submission
+  const submitBtn = form.querySelector(".submit-btn");
+  submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+  submitBtn.disabled = true;
 
-    try {
-        const response = await fetch(form.dataset.submitUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                action: 'sendContactEmail',
-                name: form.name.value.trim(),
-                email: form.email.value.trim(),
-                phone: form.phone.value.trim() || null,
-                message: form.message.value.trim(),
-                recipient: form.recipient.value,
-                subject: `New message from ${form.name.value.trim()}`,
-                profileUrl: window.location.href
-            })
-        });
+  try {
+    const response = await fetch(form.dataset.submitUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "sendContactEmail",
+        name: form.name.value.trim(),
+        email: form.email.value.trim(),
+        phone: form.phone.value.trim() || null,
+        message: form.message.value.trim(),
+        recipient: form.recipient.value,
+        subject: `New message from ${form.name.value.trim()}`,
+        profileUrl: window.location.href,
+      }),
+    });
 
-        if (!response.ok) throw new Error('Server error');
-        
-        form.reset();
-        Swal.fire({ icon: 'success', title: 'Sent!', background: '#1a1a1a', timer: 1500 });
-    } catch (error) {
-        Swal.fire({ icon: 'error', title: 'Failed', text: 'Try again later', background: '#1a1a1a' });
-    } finally {
-        submitBtn.innerHTML = 'Send Message';
-        submitBtn.disabled = false;
-        form.querySelector('.error-message').classList.add('hidden');
-        form.reset();
-        form.querySelector('[data-length-counter]').textContent = '0/500';
-    }
+    if (!response.ok) throw new Error("Server error");
 
-//======== CODE FOR THE FORM SUBMISSION ========//
-            // function doPost(e) {
-            //     try {
-            //     const data = JSON.parse(e.postData.contents);
-                
-            //     // Validate required fields
-            //     if (!data.recipient || !data.name || !data.email || !data.message) {
-            //         return ContentService.createTextOutput(
-            //         JSON.stringify({ 
-            //             status: "error", 
-            //             message: "Missing required fields" 
-            //         })
-            //         ).setMimeType(ContentService.MimeType.JSON);
-            //     }
-                
+    form.reset();
+    Swal.fire({
+      icon: "success",
+      title: "Sent!",
+      background: "#1a1a1a",
+      timer: 1500,
+    });
+  } catch (error) {
+    Swal.fire({
+      icon: "error",
+      title: "Failed",
+      text: "Try again later",
+      background: "#1a1a1a",
+    });
+  } finally {
+    submitBtn.innerHTML = "Send Message";
+    submitBtn.disabled = false;
+    form.querySelector(".error-message").classList.add("hidden");
+    form.reset();
+    form.querySelector("[data-length-counter]").textContent = "0/500";
+  }
 
-            //     const emailBody = `
-            //     📬 New Contact From Your Digital Profile
-            
-            //     👤 Name: ${data.name}
-            //     ✉️ Email: ${data.email}
-            //     📞 Phone: ${data.phone || "Not provided"}
-            
-            //     🌐 Profile Link: ${data.profileUrl || "Not provided"}
-            
-            //     💬 Message:
-            //     ${data.message}
-            
-            //     ⏰ Received: ${new Date().toLocaleString()}`;
-                
-            //     // Send email to profile owner
-            //     MailApp.sendEmail({
-            //         to: data.recipient,
-            //         subject: data.subject || "New contact from your digital profile",
-            //         body: emailBody,
-            //         replyTo: data.email, // Allows direct reply to visitor
-            //         name: "TC Cards Notification" // Sender name
-            //     });
-                
-            //     return ContentService.createTextOutput(
-            //         JSON.stringify({ 
-            //         status: "success", 
-            //         message: "Email sent successfully" 
-            //         })
-            //     ).setMimeType(ContentService.MimeType.JSON);
-                
-            //     } catch (error) {
-            //     console.error("Form processing error:", error);
-            //     return ContentService.createTextOutput(
-            //         JSON.stringify({ 
-            //         status: "error", 
-            //         message: error.toString() 
-            //         })
-            //     ).setMimeType(ContentService.MimeType.JSON);
-            //     }
-            // }
-//======== END OF FORM SUBMISSION CODE ========//
+  //======== CODE FOR THE FORM SUBMISSION ========//
+  // function doPost(e) {
+  //     try {
+  //     const data = JSON.parse(e.postData.contents);
 
+  //     // Validate required fields
+  //     if (!data.recipient || !data.name || !data.email || !data.message) {
+  //         return ContentService.createTextOutput(
+  //         JSON.stringify({
+  //             status: "error",
+  //             message: "Missing required fields"
+  //         })
+  //         ).setMimeType(ContentService.MimeType.JSON);
+  //     }
+
+  //     const emailBody = `
+  //     📬 New Contact From Your Digital Profile
+
+  //     👤 Name: ${data.name}
+  //     ✉️ Email: ${data.email}
+  //     📞 Phone: ${data.phone || "Not provided"}
+
+  //     🌐 Profile Link: ${data.profileUrl || "Not provided"}
+
+  //     💬 Message:
+  //     ${data.message}
+
+  //     ⏰ Received: ${new Date().toLocaleString()}`;
+
+  //     // Send email to profile owner
+  //     MailApp.sendEmail({
+  //         to: data.recipient,
+  //         subject: data.subject || "New contact from your digital profile",
+  //         body: emailBody,
+  //         replyTo: data.email, // Allows direct reply to visitor
+  //         name: "TC Cards Notification" // Sender name
+  //     });
+
+  //     return ContentService.createTextOutput(
+  //         JSON.stringify({
+  //         status: "success",
+  //         message: "Email sent successfully"
+  //         })
+  //     ).setMimeType(ContentService.MimeType.JSON);
+
+  //     } catch (error) {
+  //     console.error("Form processing error:", error);
+  //     return ContentService.createTextOutput(
+  //         JSON.stringify({
+  //         status: "error",
+  //         message: error.toString()
+  //         })
+  //     ).setMimeType(ContentService.MimeType.JSON);
+  //     }
+  // }
+  //======== END OF FORM SUBMISSION CODE ========//
 }
 
 function renderSocialLinks(links) {
-    if (!links || typeof links !== 'string') return '';
+  if (!links || typeof links !== "string") return "";
 
-    // Map of domains to their corresponding Font Awesome icons
-    const platformIcons = {
-        'facebook.com': 'fab fa-facebook',
-        'fb.com': 'fab fa-facebook',
-        'fb.me': 'fab fa-facebook',
-        'messenger.com': 'fab fa-facebook-messenger',
-        'm.me':'fab fa-facebook-messenger',
-        'twitter.com': 'fab fa-twitter', 
-        'x.com': 'fab fa-x-twitter',
-        'instagram.com': 'fab fa-instagram',
-        'linkedin.com': 'fab fa-linkedin',
-        'youtube.com': 'fab fa-youtube',
-        'tiktok.com': 'fab fa-tiktok',
-        'pinterest.com': 'fab fa-pinterest',
-        'snapchat.com': 'fab fa-snapchat',
-        'reddit.com': 'fab fa-reddit',
-        'discord.com': 'fab fa-discord',
-        'twitch.tv': 'fab fa-twitch',
-        'github.com': 'fab fa-github',
-        'discord.gg': 'fab fa-discord',
-        'cal.com': 'fas fa-calendar-alt',
-        'calendly.com': 'fas fa-calendar-alt',
-        'linktree.com': 'fas fa-link',
-        'linktr.ee': 'fas fa-link',
-        'tccards.tn': 'fas fa-id-card',
-        'medium.com': 'fab fa-medium',
-        'whatsapp.com': 'fab fa-whatsapp',
-        'wa.me': 'fab fa-whatsapp',
-        'dribbble.com': 'fab fa-dribbble',
-        'behance.net': 'fab fa-behance',
-        'telegram.org': 'fab fa-telegram',
-        't.me': 'fab fa-telegram',
-        'vimeo.com': 'fab fa-vimeo',
-        'spotify.com': 'fab fa-spotify',
-        'apple.com': 'fab fa-apple',
-        'google.com': 'fab fa-google',
-        'youtube-nocookie.com': 'fab fa-youtube',
-        'soundcloud.com': 'fab fa-soundcloud',
-        'paypal.com': 'fab fa-paypal',
-        'github.io': 'fab fa-github',
-        'stackoverflow.com': 'fab fa-stack-overflow',
-        'quora.com': 'fab fa-quora'
-    };
+  // Map of domains to their corresponding Font Awesome icons
+  const platformIcons = {
+    "facebook.com": "fab fa-facebook",
+    "fb.com": "fab fa-facebook",
+    "fb.me": "fab fa-facebook",
+    "messenger.com": "fab fa-facebook-messenger",
+    "m.me": "fab fa-facebook-messenger",
+    "twitter.com": "fab fa-twitter",
+    "x.com": "fab fa-x-twitter",
+    "instagram.com": "fab fa-instagram",
+    "linkedin.com": "fab fa-linkedin",
+    "youtube.com": "fab fa-youtube",
+    "tiktok.com": "fab fa-tiktok",
+    "pinterest.com": "fab fa-pinterest",
+    "snapchat.com": "fab fa-snapchat",
+    "reddit.com": "fab fa-reddit",
+    "discord.com": "fab fa-discord",
+    "twitch.tv": "fab fa-twitch",
+    "github.com": "fab fa-github",
+    "discord.gg": "fab fa-discord",
+    "cal.com": "fas fa-calendar-alt",
+    "calendly.com": "fas fa-calendar-alt",
+    "linktree.com": "fas fa-link",
+    "linktr.ee": "fas fa-link",
+    "tccards.tn": "fas fa-id-card",
+    "medium.com": "fab fa-medium",
+    "whatsapp.com": "fab fa-whatsapp",
+    "wa.me": "fab fa-whatsapp",
+    "dribbble.com": "fab fa-dribbble",
+    "behance.net": "fab fa-behance",
+    "telegram.org": "fab fa-telegram",
+    "t.me": "fab fa-telegram",
+    "vimeo.com": "fab fa-vimeo",
+    "spotify.com": "fab fa-spotify",
+    "apple.com": "fab fa-apple",
+    "google.com": "fab fa-google",
+    "youtube-nocookie.com": "fab fa-youtube",
+    "soundcloud.com": "fab fa-soundcloud",
+    "paypal.com": "fab fa-paypal",
+    "github.io": "fab fa-github",
+    "stackoverflow.com": "fab fa-stack-overflow",
+    "quora.com": "fab fa-quora",
+  };
 
-    const validLinks = links.split(",")
-        .map(link => {
-            link = link.trim();
-            if (!link) return null;
-            
-            try {
-                // Ensure URL has protocol
-                if (!/^https?:\/\//i.test(link)) link = 'https://' + link;
-                const url = new URL(link);
-                const domain = url.hostname.replace(/^www\./, '');
-                
-                // Check if domain is in our platform icons
-                const iconClass = Object.keys(platformIcons).find(key => 
-                    domain.includes(key)
-                ) ? platformIcons[Object.keys(platformIcons).find(key => domain.includes(key))] : 'fas fa-link';
-                
-                return {
-                    href: url.href,
-                    display: domain,
-                    icon: iconClass
-                };
-            } catch (e) {
-                return null;
-            }
-        })
-        .filter(link => link !== null);
+  const validLinks = links
+    .split(",")
+    .map((link) => {
+      link = link.trim();
+      if (!link) return null;
 
-    if (!validLinks.length) return '';
+      try {
+        // Ensure URL has protocol
+        if (!/^https?:\/\//i.test(link)) link = "https://" + link;
+        const url = new URL(link);
+        const domain = url.hostname.replace(/^www\./, "");
 
-    return `
+        // Check if domain is in our platform icons
+        const iconClass = Object.keys(platformIcons).find((key) =>
+          domain.includes(key)
+        )
+          ? platformIcons[
+              Object.keys(platformIcons).find((key) => domain.includes(key))
+            ]
+          : "fas fa-link";
+
+        return {
+          href: url.href,
+          display: domain,
+          icon: iconClass,
+        };
+      } catch (e) {
+        return null;
+      }
+    })
+    .filter((link) => link !== null);
+
+  if (!validLinks.length) return "";
+
+  return `
         <div class="social-links">
-            ${validLinks.map(link => `
-                <a href="${escapeHtml(link.href)}" target="_blank" rel="noopener noreferrer" class="flex items-center gap-3 p-3 hover:bg-gray-700 rounded-lg transition-colors">
+            ${validLinks
+              .map(
+                (link) => `
+                <a href="${escapeHtml(
+                  link.href
+                )}" target="_blank" rel="noopener noreferrer" class="flex items-center gap-3 p-3 hover:bg-gray-700 rounded-lg transition-colors">
                     <i class="${link.icon} text-lg"></i>
                     <span>${escapeHtml(link.display)}</span>
                 </a>
-            `).join('')}
+            `
+              )
+              .join("")}
         </div>
     `;
 }
 async function showContactDetails(contact) {
-    try {
-        if (!contact || typeof contact !== 'object') {
-            throw new Error('Invalid contact data');
-        }
+  try {
+    if (!contact || typeof contact !== "object") {
+      throw new Error("Invalid contact data");
+    }
 
-        const contactHtml = `
+    const contactHtml = `
             <div class="contact-details-container">
             <div class="contact-header">
-                <img src="${escapeHtml(contact.profilePic)}" class="profile-picture" alt="${escapeHtml(contact.name)}" onerror="this.src='https://tccards.tn/Assets/default.png'">
+                <img src="${escapeHtml(
+                  contact.profilePic
+                )}" class="profile-picture" alt="${escapeHtml(
+      contact.name
+    )}" onerror="this.src='https://tccards.tn/Assets/default.png'">
                 <h3>${escapeHtml(contact.name)}</h3>
             </div>
             <div class="contact-table">
-                ${contact.email ? `
+                ${
+                  contact.email
+                    ? `
                 <div class="contact-row">
                     <div class="contact-icon"><i class="fas fa-envelope"></i></div>
                     <div class="contact-info">
-                    <a href="mailto:${escapeHtml(contact.email)}" class="contact-link">${escapeHtml(contact.email)}</a>
+                    <a href="mailto:${escapeHtml(
+                      contact.email
+                    )}" class="contact-link">${escapeHtml(contact.email)}</a>
                     </div>
-                </div>` : ''}
-                ${contact.phone ? `
+                </div>`
+                    : ""
+                }
+                ${
+                  contact.phone
+                    ? `
                 <div class="contact-row">
                     <div class="contact-icon"><i class="fas fa-phone"></i></div>
                     <div class="contact-info">
-                    <a href="tel:${escapeHtml(contact.phone)}" class="contact-link">${escapeHtml(contact.phone)}</a>
+                    <a href="tel:${escapeHtml(
+                      contact.phone
+                    )}" class="contact-link">${escapeHtml(contact.phone)}</a>
                     </div>
-                </div>` : ''}
-                ${contact.address ? `
+                </div>`
+                    : ""
+                }
+                ${
+                  contact.address
+                    ? `
                 <div class="contact-row">
                     <div class="contact-icon"><i class="fas fa-map-marker-alt"></i></div>
                     <div class="contact-info">
-                    <a href="https://maps.google.com/?q=${encodeURIComponent(contact.address)}" target="_blank" class="contact-link">${escapeHtml(contact.address)}</a>
+                    <a href="https://maps.google.com/?q=${encodeURIComponent(
+                      contact.address
+                    )}" target="_blank" class="contact-link">${escapeHtml(
+                        contact.address
+                      )}</a>
                     </div>
-                </div>` : ''}
+                </div>`
+                    : ""
+                }
             </div>
             </div>
         `;
 
-        const result = await Swal.fire({
-            title: 'Contact Details',
-            html: contactHtml,
-            background: typeof contact.style === 'object' ? contact.style?.background : contact.style || '#162949',
-            confirmButtonText: 'Copy Details',
-            showCancelButton: true,
-            cancelButtonText: 'Close',
-            color: '#fff',
-            showLoaderOnConfirm: true,
-            allowOutsideClick: false,
-            customClass: {
-                confirmButton: 'swal-confirm-button',
-                cancelButton: 'swal-cancel-button'
-            }
-        });
+    const result = await Swal.fire({
+      title: "Contact Details",
+      html: contactHtml,
+      background:
+        typeof contact.style === "object"
+          ? contact.style?.background
+          : contact.style || "#162949",
+      confirmButtonText: "Copy Details",
+      showCancelButton: true,
+      cancelButtonText: "Close",
+      color: "#fff",
+      showLoaderOnConfirm: true,
+      allowOutsideClick: false,
+      customClass: {
+        confirmButton: "swal-confirm-button",
+        cancelButton: "swal-cancel-button",
+      },
+    });
 
-        if (result.isConfirmed) {
-            await copyContactDetails(contact);
-        }
-
-    } catch (error) {
-        console.error('Error in showContactDetails:', error);
-        await Swal.fire({
-            icon: 'error',
-            title: 'Error',
-            text: 'Could not display contact details',
-            background: '#1a1a1a',
-            color: '#fff'
-        });
+    if (result.isConfirmed) {
+      await copyContactDetails(contact);
     }
+  } catch (error) {
+    console.error("Error in showContactDetails:", error);
+    await Swal.fire({
+      icon: "error",
+      title: "Error",
+      text: "Could not display contact details",
+      background: "#1a1a1a",
+      color: "#fff",
+    });
+  }
 }
 
 async function copyContactDetails(contact) {
-    try {
-        const contactText = [
-            contact.name,
-            contact.email && `Email: ${contact.email}`,
-            contact.phone && `Phone: ${contact.phone}`,
-            contact.address && `Address: ${contact.address}`
-        ].filter(Boolean).join('\n');
+  try {
+    const contactText = [
+      contact.name,
+      contact.email && `Email: ${contact.email}`,
+      contact.phone && `Phone: ${contact.phone}`,
+      contact.address && `Address: ${contact.address}`,
+    ]
+      .filter(Boolean)
+      .join("\n");
 
-        await navigator.clipboard.writeText(contactText);
-        await Swal.fire({
-            icon: 'success',
-            title: 'Copied!',
-            toast: true,
-            position: 'center',
-            showConfirmButton: false,
-            timer: 2000,
-            timerProgressBar: true,
-            background: '#1a1a1a',
-            color: '#fff'
-        });
-    } catch (error) {
-        console.error('Copy failed:', error);
-        throw new Error('Failed to copy contact details');
-    }
+    await navigator.clipboard.writeText(contactText);
+    await Swal.fire({
+      icon: "success",
+      title: "Copied!",
+      toast: true,
+      position: "center",
+      showConfirmButton: false,
+      timer: 2000,
+      timerProgressBar: true,
+      background: "#1a1a1a",
+      color: "#fff",
+    });
+  } catch (error) {
+    console.error("Copy failed:", error);
+    throw new Error("Failed to copy contact details");
+  }
 }
 
 // XSS protection
 function escapeHtml(unsafe) {
-    if (typeof unsafe !== 'string') return unsafe;
-    return unsafe
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
+  if (typeof unsafe !== "string") return unsafe;
+  return unsafe
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
 }
 
 // Error display
 function showError(message) {
-    const container = document.querySelector(".card-container") || document.body;
-    container.innerHTML = `
+  const container = document.querySelector(".card-container") || document.body;
+  container.innerHTML = `
         <div class="error-message">
             <h3 class="error-title">${escapeHtml(message)}</h3>
             <p class="error-subtext">Please check the URL or try again later.</p>
         </div>
     `;
-    
-    // Remove loading states
-    document.body.classList.remove('loading');
-    const existingLoader = document.querySelector('.loader');
-    if (existingLoader) existingLoader.remove();
+
+  // Remove loading states
+  document.body.classList.remove("loading");
+  const existingLoader = document.querySelector(".loader");
+  if (existingLoader) existingLoader.remove();
 }
 
 function showShareOptions(link) {
-    
-    username = `https://card.tccards.tn/@${link}`;
-    // Generate a profile image with initials as fallback
-    const profileName = document.querySelector('h2')?.textContent || 'User';
-    const profileImage = document.querySelector('.profile-picture')?.src || 
-        `<div class="avatar-fallback" style="background-color: ${stringToColor(profileName)}">
+  username = `https://card.tccards.tn/@${link}`;
+  // Generate a profile image with initials as fallback
+  const profileName = document.querySelector("h2")?.textContent || "User";
+  const profileImage =
+    document.querySelector(".profile-picture")?.src ||
+    `<div class="avatar-fallback" style="background-color: ${stringToColor(
+      profileName
+    )}">
             ${getInitials(profileName)}
         </div>`;
-    
 
-    Swal.fire({
-        title: 'Share Profile',
-        html: `
+  Swal.fire({
+    title: "Share Profile",
+    html: `
             <div class="tc-share-container">
                 <div class="tc-profile-header">
-                    ${typeof profileImage === 'string' ? 
-                        `<img src="${profileImage}" class="tc-profile-pic" alt="Profile">` : 
-                        profileImage}
+                    ${
+                      typeof profileImage === "string"
+                        ? `<img src="${profileImage}" class="tc-profile-pic" alt="Profile">`
+                        : profileImage
+                    }
                     <h3 class="tc-username">@${link}</h3>
                 </div>
                 
@@ -681,72 +793,83 @@ function showShareOptions(link) {
                 </div>
             </div>
         `,
-        showConfirmButton: false,
-        showCloseButton: true,
-        maxWidth: '600px',
-        width: '90%',
-        background: '#ffffff',
-        customClass: {
-            popup: 'tc-share-popup',
-            closeButton: 'tc-close-btn'
-        },
-        footer: `
+    showConfirmButton: false,
+    showCloseButton: true,
+    maxWidth: "600px",
+    width: "90%",
+    background: "#ffffff",
+    customClass: {
+      popup: "tc-share-popup",
+      closeButton: "tc-close-btn",
+    },
+    footer: `
             <div class="tc-footer-links">
                 <a href="https://tccards.tn/report" class="tc-footer-link">Report Profile</a>
                 <a href="https://tccards.tn/help" class="tc-footer-link">Help</a>
             </div>
-        `
-    });
+        `,
+  });
 }
 function stringToColor(str) {
-    let hash = 0;
-    for (let i = 0; i < str.length; i++) {
-        hash = str.charCodeAt(i) + ((hash << 5) - hash);
-    }
-    const hue = Math.abs(hash % 360);
-    return `hsl(${hue}, 70%, 60%)`;
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = str.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const hue = Math.abs(hash % 360);
+  return `hsl(${hue}, 70%, 60%)`;
 }
 
 function getInitials(name) {
-    return name.split(' ').map(part => part[0]).join('').toUpperCase().substring(0, 2);
+  return name
+    .split(" ")
+    .map((part) => part[0])
+    .join("")
+    .toUpperCase()
+    .substring(0, 2);
 }
 
 // Add these helper functions
 function copyShareLink() {
-    const input = document.getElementById('tc-share-link-input');
-    input.select();
-    document.execCommand('copy');
-    Swal.fire({
-        title: 'Copied!',
-        text: 'Link copied to clipboard',
-        icon: 'success',
-        timer: 2000,
-        showConfirmButton: false
-    });
+  const input = document.getElementById("tc-share-link-input");
+  input.select();
+  document.execCommand("copy");
+  Swal.fire({
+    title: "Copied!",
+    text: "Link copied to clipboard",
+    icon: "success",
+    timer: 2000,
+    showConfirmButton: false,
+  });
 }
 
 function shareTo(platform) {
-    const shareLink = document.getElementById('tc-share-link-input').value;
-    const shareText = `Check out my digital profile: ${shareLink}`;
-    
-    let url = '';
-    switch(platform) {
-        case 'facebook':
-            url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareLink)}`;
-            break;
-        case 'whatsapp':
-            url = `https://wa.me/?text=${encodeURIComponent(shareText)}`;
-            break;
-        case 'linkedin':
-            url = `https://www.linkedin.com/shareArticle?mini=true&url=${encodeURIComponent(shareLink)}`;
-            break;
-        case 'messenger':
-            url = `fb-messenger://share/?link=${encodeURIComponent(shareLink)}`;
-            break;
-        case 'snapchat':
-            url = `https://www.snapchat.com/scan?attachmentUrl=${encodeURIComponent(shareLink)}`;
-            break;
-    }
-    
-    window.open(url, '_blank', 'noopener,noreferrer');
+  const shareLink = document.getElementById("tc-share-link-input").value;
+  const shareText = `Check out my digital profile: ${shareLink}`;
+
+  let url = "";
+  switch (platform) {
+    case "facebook":
+      url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(
+        shareLink
+      )}`;
+      break;
+    case "whatsapp":
+      url = `https://wa.me/?text=${encodeURIComponent(shareText)}`;
+      break;
+    case "linkedin":
+      url = `https://www.linkedin.com/shareArticle?mini=true&url=${encodeURIComponent(
+        shareLink
+      )}`;
+      break;
+    case "messenger":
+      url = `fb-messenger://share/?link=${encodeURIComponent(shareLink)}`;
+      break;
+    case "snapchat":
+      url = `https://www.snapchat.com/scan?attachmentUrl=${encodeURIComponent(
+        shareLink
+      )}`;
+      break;
+  }
+
+  window.open(url, "_blank", "noopener,noreferrer");
 }
