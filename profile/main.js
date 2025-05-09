@@ -240,251 +240,174 @@ function createProfileCardHTML(profileData, selectedStyle) {
     </center>
     `;
 }
-
 function renderProfileForm(profileEmail, formSubmitUrl) {
   return `
     <script src="https://cdn.tailwindcss.com"></script>
-            <h3 class="text-xl font-semibold mb-6 text-white text-center">Contact Form</h3>
-            <form class="space-y-4" data-submit-url="${escapeHtml(
-              formSubmitUrl
-            )}" novalidate>
-                <!-- Name Field -->
-                <div>
-                    <input 
-                        type="text" 
-                        name="name" 
-                        placeholder="Your Name" 
-                        class="w-full px-4 py-3 bg-gray-700/50 text-white border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                        required
-                        minlength="2"
-                        maxlength="50"
-                    >
-                    <div class="text-red-400 text-sm mt-1 hidden">Please enter your name</div>
-                </div>
-                
-                <!-- Email Field -->
-                <div>
-                    <input 
-                        type="email" 
-                        name="email" 
-                        placeholder="Your Email" 
-                        class="w-full px-4 py-3 bg-gray-700/50 text-white border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                        required
-                    >
-                    <div class="text-red-400 text-sm mt-1 hidden">Please enter a valid email</div>
-                </div>
-                
-                <!-- Phone Field -->
-                <div>
-                    <input 
-                        type="tel" 
-                        name="phone" 
-                        placeholder="Your Phone (Optional)" 
-                        class="w-full px-4 py-3 bg-gray-700/50 text-white border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                    >
-                </div>
-                
-                <!-- Message Field -->
-                <div>
-                    <textarea 
-                        name="message" 
-                        placeholder="Your Message/Inquiry" 
-                        class="w-full px-4 py-3 bg-gray-700/50 text-white border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all min-h-[120px]"
-                        required
-                        minlength="10"
-                        maxlength="500"
-                    ></textarea>
-                    <div class="flex justify-between mt-1">
-                        <div class="text-red-400 text-sm hidden" data-error>Message must be 10-500 characters</div>
-                        <div class="text-xs text-gray-400" data-counter>0/500</div>
-                    </div>
-                </div>
-                <!-- Hidden Fields -->
-                <input type="hidden" name="action" value="sendContactEmail">
-                <input type="hidden" name="recipient" value="${escapeHtml(
-                  profileEmail
-                )}">
-                <input type="hidden" name="subject" value="New contact from your digital profile">
-                
-                <!-- Submit Button -->
-                <button type="submit" class="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-800">
-                    Send Message
-                </button>
-            </form>
-    `;
-}
-function validateForm(form) {
-  // 1. Required fields check
-  const nameValid = form.name.value.trim().length >= 2;
-  const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.value);
-  const messageValid = form.message.value.trim().length >= 10;
-
-  // 2. Visual feedback
-  form.name.style.borderColor = nameValid ? "" : "red";
-  form.email.style.borderColor = emailValid ? "" : "red";
-  form.message.style.borderColor = messageValid ? "" : "red";
-
-  return nameValid && emailValid && messageValid;
-}
-// Add to your form initialization code
-document.addEventListener("DOMContentLoaded", function () {
-  const textarea = document.querySelector('textarea[name="message"]');
-  const counter = document.querySelector("[data-counter]");
-  const errorElement = document.querySelector("[data-error]");
-
-  if (textarea && counter && errorElement) {
-    textarea.addEventListener("input", function (e) {
-      const length = e.target.value.length;
-      counter.textContent = `${length}/500`;
-
-      // Update counter color
-      if (length > 500) {
-        counter.style.color = "#f87171";
-        errorElement.classList.remove("hidden");
-      } else {
-        counter.style.color = "rgba(255, 255, 255, 0.5)";
-        errorElement.classList.add("hidden");
-      }
-
-      // Validate on the fly
-      if (length >= 10 && length <= 500) {
-        errorElement.classList.add("hidden");
-        e.target.setCustomValidity("");
-      } else {
-        e.target.setCustomValidity("Message must be 10-500 characters");
-      }
-    });
-
-    // Also validate on form submission
-    const form = textarea.closest("form");
-    if (form) {
-      form.addEventListener("submit", function (e) {
-        const length = textarea.value.length;
-        if (length < 10 || length > 500) {
-          e.preventDefault();
-          errorElement.classList.remove("hidden");
-          textarea.focus();
+    <h3 class="text-xl font-semibold mb-6 text-white text-center">Contact Form</h3>
+    <form id="contactForm" class="space-y-4" novalidate>
+      <!-- Name Field -->
+      <div>
+        <input 
+          type="text" 
+          name="name" 
+          placeholder="Your Name" 
+          class="w-full px-4 py-3 bg-gray-700/50 text-white border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+          required
+          minlength="2"
+          maxlength="50"
+        >
+        <div class="text-red-400 text-sm mt-1 hidden">Please enter your name</div>
+      </div>
+      
+      <!-- Email Field -->
+      <div>
+        <input 
+          type="email" 
+          name="email" 
+          placeholder="Your Email" 
+          class="w-full px-4 py-3 bg-gray-700/50 text-white border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+          required
+        >
+        <div class="text-red-400 text-sm mt-1 hidden">Please enter a valid email</div>
+      </div>
+      
+      <!-- Phone Field -->
+      <div>
+        <input 
+          type="tel" 
+          name="phone" 
+          placeholder="Your Phone (Optional)" 
+          class="w-full px-4 py-3 bg-gray-700/50 text-white border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+        >
+      </div>
+      
+      <!-- Message Field -->
+      <div>
+        <textarea 
+          name="message" 
+          placeholder="Your Message/Inquiry" 
+          class="w-full px-4 py-3 bg-gray-700/50 text-white border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all min-h-[120px]"
+          required
+          minlength="10"
+          maxlength="500"
+        ></textarea>
+        <div class="flex justify-between mt-1">
+          <div class="text-red-400 text-sm hidden" data-error>Message must be 10-500 characters</div>
+          <div class="text-xs text-gray-400" data-counter>0/500</div>
+        </div>
+      </div>
+      
+      <!-- Hidden Fields -->
+      <input type="hidden" name="action" value="sendContactEmail">
+      <input type="hidden" name="recipient" value="${escapeHtml(profileEmail)}">
+      <input type="hidden" name="subject" value="New contact from your digital profile">
+      
+      <!-- Submit Button -->
+      <button type="submit" class="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-800">
+        Send Message
+      </button>
+    </form>
+    
+    <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      const form = document.getElementById("contactForm");
+      
+      if (form) {
+        // Character counter setup (same as before)
+        const textarea = form.querySelector('textarea[name="message"]');
+        const counter = form.querySelector("[data-counter]");
+        const errorElement = form.querySelector("[data-error]");
+        
+        if (textarea && counter && errorElement) {
+          textarea.addEventListener("input", function(e) {
+            const length = e.target.value.length;
+            counter.textContent = \`\${length}/500\`;
+            
+            if (length > 500) {
+              counter.style.color = "#f87171";
+              errorElement.classList.remove("hidden");
+            } else {
+              counter.style.color = "rgba(255, 255, 255, 0.5)";
+              errorElement.classList.add("hidden");
+            }
+          });
         }
-      });
-    }
-  }
-});
-async function handleFormSubmit(event) {
-  event.preventDefault();
-  const form = event.target;
-
-  // 1. Validate inputs (EXIT EARLY IF INVALID)
-  if (!validateForm(form)) {
-    Swal.fire({
-      icon: "error",
-      title: "Complete all fields properly",
-      text: "• Name (2+ chars)\n• Valid email\n• Message (10+ chars)",
-      background: "#1a1a1a",
+        
+        // Modified submit handler to prevent reload
+        form.addEventListener("submit", async function(e) {
+          e.preventDefault();
+          
+          // Validate form
+          const nameValid = form.name.value.trim().length >= 2;
+          const emailValid = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(form.email.value);
+          const messageValid = form.message.value.trim().length >= 10;
+          
+          if (!nameValid || !emailValid || !messageValid) {
+            Swal.fire({
+              icon: "error",
+              title: "Complete all fields properly",
+              text: "• Name (2+ chars)\\n• Valid email\\n• Message (10+ chars)",
+              background: "#1a1a1a",
+            });
+            return;
+          }
+          
+          // Show loading state
+          const submitBtn = form.querySelector('button[type="submit"]');
+          const originalBtnText = submitBtn.innerHTML;
+          submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+          submitBtn.disabled = true;
+          
+          try {
+            // Prepare URL parameters
+            const params = new URLSearchParams();
+            params.append("action", "sendContactEmail");
+            params.append("name", form.name.value.trim());
+            params.append("email", form.email.value.trim());
+            params.append("phone", form.phone.value.trim() || "");
+            params.append("message", form.message.value.trim());
+            params.append("recipient", "${escapeHtml(profileEmail)}");
+            params.append("subject", \`New message from \${form.name.value.trim()}\`);
+            params.append("profileUrl", window.location.href);
+            
+            // Submit via GET but using fetch() to prevent page reload
+            const response = await fetch(\`${escapeHtml(formSubmitUrl)}?\${params.toString()}\`);
+            
+            if (!response.ok) throw new Error("Server error");
+            
+            const result = await response.json();
+            if (result.status !== "success") throw new Error(result.message);
+            
+            // Success handling
+            form.reset();
+            if (counter) counter.textContent = "0/500";
+            
+            Swal.fire({
+              icon: "success",
+              title: "Sent!",
+              text: "Your message has been delivered",
+              background: "#1a1a1a",
+              timer: 2000
+            });
+          } catch (error) {
+            Swal.fire({
+              icon: "error",
+              title: "Failed to send",
+              text: error.message || "Please try again later",
+              background: "#1a1a1a"
+            });
+          } finally {
+            // Reset button state
+            if (submitBtn) {
+              submitBtn.innerHTML = originalBtnText;
+              submitBtn.disabled = false;
+            }
+          }
+        });
+      }
     });
-    return;
-  }
-
-  // 2. Proceed with submission
-  const submitBtn = form.querySelector(".submit-btn");
-  submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-  submitBtn.disabled = true;
-
-  try {
-    const response = await fetch(form.dataset.submitUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        action: "sendContactEmail",
-        name: form.name.value.trim(),
-        email: form.email.value.trim(),
-        phone: form.phone.value.trim() || null,
-        message: form.message.value.trim(),
-        recipient: form.recipient.value,
-        subject: `New message from ${form.name.value.trim()}`,
-        profileUrl: window.location.href,
-      }),
-    });
-
-    if (!response.ok) throw new Error("Server error");
-
-    form.reset();
-    Swal.fire({
-      icon: "success",
-      title: "Sent!",
-      background: "#1a1a1a",
-      timer: 1500,
-    });
-  } catch (error) {
-    Swal.fire({
-      icon: "error",
-      title: "Failed",
-      text: "Try again later",
-      background: "#1a1a1a",
-    });
-  } finally {
-    submitBtn.innerHTML = "Send Message";
-    submitBtn.disabled = false;
-    form.querySelector(".error-message").classList.add("hidden");
-    form.reset();
-    form.querySelector("[data-length-counter]").textContent = "0/500";
-  }
-
-  //======== CODE FOR THE FORM SUBMISSION ========//
-  // function doPost(e) {
-  //     try {
-  //     const data = JSON.parse(e.postData.contents);
-
-  //     // Validate required fields
-  //     if (!data.recipient || !data.name || !data.email || !data.message) {
-  //         return ContentService.createTextOutput(
-  //         JSON.stringify({
-  //             status: "error",
-  //             message: "Missing required fields"
-  //         })
-  //         ).setMimeType(ContentService.MimeType.JSON);
-  //     }
-
-  //     const emailBody = `
-  //     📬 New Contact From Your Digital Profile
-
-  //     👤 Name: ${data.name}
-  //     ✉️ Email: ${data.email}
-  //     📞 Phone: ${data.phone || "Not provided"}
-
-  //     🌐 Profile Link: ${data.profileUrl || "Not provided"}
-
-  //     💬 Message:
-  //     ${data.message}
-
-  //     ⏰ Received: ${new Date().toLocaleString()}`;
-
-  //     // Send email to profile owner
-  //     MailApp.sendEmail({
-  //         to: data.recipient,
-  //         subject: data.subject || "New contact from your digital profile",
-  //         body: emailBody,
-  //         replyTo: data.email, // Allows direct reply to visitor
-  //         name: "TC Cards Notification" // Sender name
-  //     });
-
-  //     return ContentService.createTextOutput(
-  //         JSON.stringify({
-  //         status: "success",
-  //         message: "Email sent successfully"
-  //         })
-  //     ).setMimeType(ContentService.MimeType.JSON);
-
-  //     } catch (error) {
-  //     console.error("Form processing error:", error);
-  //     return ContentService.createTextOutput(
-  //         JSON.stringify({
-  //         status: "error",
-  //         message: error.toString()
-  //         })
-  //     ).setMimeType(ContentService.MimeType.JSON);
-  //     }
-  // }
-  //======== END OF FORM SUBMISSION CODE ========//
+    </script>
+  `;
 }
 
 function renderSocialLinks(links) {
