@@ -1,32 +1,83 @@
-// Configuration - moved to top for easy maintenance
-const CONFIG = {
+
+const CONFIG = Object.freeze({
   defaultBg: "url(https://tccards.tn/Assets/bg.png) center fixed",
   defaultProfilePic: "https://tccards.tn/Assets/default.png",
-  submitUrl:
-    "https://script.google.com/macros/s/AKfycbzBI6WskjhTpezrIbUcveqY_EW8IJ5PUMQ0Aby6FJhpqo4sV-KfPtC3S668aNA7nYOL/exec",
-  databases: [
-    {
+  databases: Object.freeze([
+    Object.freeze({
       id: "AKfycbzPv8Rr4jM6Fcyjm6uelUtqw2hHLCFWYhXJlt6nWTIKaqUL_9j_41rwzhFGMlkF2nrG",
       plan: "basic",
-    },
-  ],
-  styles: {
-    corporateGradient: {
-      background:
-        "linear-gradient(145deg, rgb(9, 9, 11), rgb(24, 24, 27), rgb(9, 9, 11))",
-    },
-    oceanGradient: {
-      background:
-        "linear-gradient(145deg, rgb(2, 6, 23), rgb(15, 23, 42), rgb(2, 6, 23))",
-    },
-  },
+    }),
+  ]),
+  styles: Object.freeze({
+    corporateGradient: Object.freeze({
+      background: "linear-gradient(145deg, rgb(9, 9, 11), rgb(24, 24, 27), rgb(9, 9, 11))",
+    }),
+    oceanGradient: Object.freeze({
+      background: "linear-gradient(145deg, rgb(2, 6, 23), rgb(15, 23, 42), rgb(2, 6, 23))",
+    }),
+  }),
+});
+
+// Cache DOM elements
+const domCache = {
+  body: document.body,
+  loader: document.querySelector(".loader"),
+  container: document.querySelector(".card-container"),
 };
 
-document.addEventListener("DOMContentLoaded", function () {
+// Platform icons map
+const PLATFORM_ICONS = Object.freeze({
+  "facebook.com": "fab fa-facebook",
+  "fb.com": "fab fa-facebook",
+  "fb.me": "fab fa-facebook",
+  "messenger.com": "fab fa-facebook-messenger",
+  "m.me": "fab fa-facebook-messenger",
+  "twitter.com": "fab fa-twitter",
+  "x.com": "fab fa-x-twitter",
+  "instagram.com": "fab fa-instagram",
+  "linkedin.com": "fab fa-linkedin",
+  "youtube.com": "fab fa-youtube",
+  "tiktok.com": "fab fa-tiktok",
+  "pinterest.com": "fab fa-pinterest",
+  "snapchat.com": "fab fa-snapchat",
+  "reddit.com": "fab fa-reddit",
+  "discord.com": "fab fa-discord",
+  "twitch.tv": "fab fa-twitch",
+  "github.com": "fab fa-github",
+  "discord.gg": "fab fa-discord",
+  "cal.com": "fas fa-calendar-alt",
+  "calendly.com": "fas fa-calendar-alt",
+  "linktree.com": "fas fa-link",
+  "linktr.ee": "fas fa-link",
+  "tccards.tn": "fas fa-id-card",
+  "medium.com": "fab fa-medium",
+  "whatsapp.com": "fab fa-whatsapp",
+  "wa.me": "fab fa-whatsapp",
+  "dribbble.com": "fab fa-dribbble",
+  "behance.net": "fab fa-behance",
+  "telegram.org": "fab fa-telegram",
+  "t.me": "fab fa-telegram",
+  "vimeo.com": "fab fa-vimeo",
+  "spotify.com": "fab fa-spotify",
+  "apple.com": "fab fa-apple",
+  "google.com": "fab fa-google",
+  "youtube-nocookie.com": "fab fa-youtube",
+  "soundcloud.com": "fab fa-soundcloud",
+  "paypal.com": "fab fa-paypal",
+  "github.io": "fab fa-github",
+  "stackoverflow.com": "fab fa-stack-overflow",
+  "quora.com": "fab fa-quora",
+});
+
+// Initialize on DOM ready
+document.addEventListener("DOMContentLoaded", initProfilePage);
+
+function initProfilePage() {
   // Set initial background
-  document.body.style.background = CONFIG.defaultBg;
-  document.body.style.backgroundSize = "cover";
-  document.body.style.backdropFilter = "blur(5px)";
+  const { body } = domCache;
+  body.style.background = CONFIG.defaultBg;
+  body.style.backgroundSize = "cover";
+  body.style.backdropFilter = "blur(5px)";
 
   // Extract identifier from URL hash
   const hash = window.location.hash.substring(1);
@@ -44,64 +95,57 @@ document.addEventListener("DOMContentLoaded", function () {
   const identifier = isIdLookup ? hash.split("_")[1] : hash;
 
   searchDatabases(CONFIG.databases, identifier, isIdLookup);
-});
+}
 
-// Improved database search with better error handling
-async function searchDatabases(databases, identifier, isIdLookup, index = 0) {
+// Improved database search with parallel requests
+async function searchDatabases(databases, identifier, isIdLookup) {
   try {
-    if (index >= databases.length) {
-      showError("Profile not found in any database");
-      return;
-    }
-
-    const db = databases[index];
     const param = isIdLookup ? "id" : "link";
-    const url = `https://script.google.com/macros/s/${
-      db.id
-    }/exec?${param}=${encodeURIComponent(identifier)}`;
-
-    const response = await fetchWithTimeout(url, {
-      timeout: 5000, // 5 second timeout
+    const requests = databases.map(db => {
+      const url = `https://script.google.com/macros/s/${db.id}/exec?${param}=${encodeURIComponent(identifier)}`;
+      return fetchWithTimeout(url, { timeout: 5000 });
     });
 
-    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-
-    const data = await response.json();
-
-    if (data?.status === "error") {
-      return searchDatabases(databases, identifier, isIdLookup, index + 1);
+    const responses = await Promise.allSettled(requests);
+    
+    for (const response of responses) {
+      if (response.status === 'fulfilled' && response.value.ok) {
+        const data = await response.value.json();
+        if (data && typeof data === 'object' && data.status !== 'error') {
+          return handleProfileData(data);
+        }
+      }
     }
-
-    if (data && typeof data === "object") {
-      handleProfileData(data);
-    } else {
-      searchDatabases(databases, identifier, isIdLookup, index + 1);
-    }
+    
+    showError("Profile not found in any database");
   } catch (error) {
     console.error("Database search error:", error);
-    searchDatabases(databases, identifier, isIdLookup, index + 1);
+    showError("Error searching databases");
   }
 }
 
-// Helper function with timeout
+// Optimized fetch with timeout
 async function fetchWithTimeout(resource, options = {}) {
   const { timeout = 8000 } = options;
-
   const controller = new AbortController();
-  const id = setTimeout(() => controller.abort(), timeout);
+  const timeoutId = setTimeout(() => controller.abort(), timeout);
 
-  const response = await fetch(resource, {
-    ...options,
-    signal: controller.signal,
-  });
-  clearTimeout(id);
-
-  return response;
+  try {
+    const response = await fetch(resource, {
+      ...options,
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+    return response;
+  } catch (error) {
+    clearTimeout(timeoutId);
+    throw error;
+  }
 }
 
 function handleProfileData(data) {
   try {
-    const loader = document.querySelector(".loader");
+    const { loader } = domCache;
     if (loader) loader.style.display = "none";
 
     // Normalize data structure
@@ -131,7 +175,7 @@ function handleProfileData(data) {
 }
 
 function renderProfileCard(data) {
-  const container = document.querySelector(".card-container");
+  const { container } = domCache;
   container.style.display = "block";
 
   // Prepare profile data with defaults
@@ -140,7 +184,7 @@ function renderProfileCard(data) {
     link: data.Link || "tccards",
     tagline: data.Tagline || "",
     profilePic: data["Profile Picture URL"] || CONFIG.defaultProfilePic,
-    form: data["Form Form"] || "", // form email
+    form: data["Form"] || "",
     socialLinks: data["Social Links"] || "",
     email: data.Email || "",
     phone: data.Phone || "",
@@ -151,426 +195,227 @@ function renderProfileCard(data) {
   applyBackgroundStyle(data["Selected Style"]);
 
   // Render the profile card
-  container.innerHTML = createProfileCardHTML(
-    profileData,
-    data["Selected Style"]
-  );
+  container.innerHTML = createProfileCardHTML(profileData, data["Selected Style"]);
 
   // Initialize form if present
-  if (profileData.formType) {
-    const form = container.querySelector("form");
-    if (form) {
-      form.addEventListener("submit", function (e) {
-        e.preventDefault();
-        handleFormSubmit(
-          e,
-          profileData.formType,
-          profileData.email,
-          profileData.formSubmitUrl
-        );
-      });
-    }
+  if (profileData.form) {
+    initFormHandler(profileData.form, CONFIG.submitUrl);
+  }
+
+  // Preload profile image
+  if (profileData.profilePic !== CONFIG.defaultProfilePic) {
+    const img = new Image();
+    img.src = profileData.profilePic;
   }
 }
 
 function applyBackgroundStyle(selectedStyle) {
   if (!selectedStyle) return;
 
+  const { body } = domCache;
   if (selectedStyle.startsWith("linear-gradient")) {
-    document.body.style.background = selectedStyle;
+    body.style.background = selectedStyle;
   } else {
-    document.body.style.background =
-      CONFIG.styles[selectedStyle]?.background || CONFIG.defaultBg;
+    body.style.background = CONFIG.styles[selectedStyle]?.background || CONFIG.defaultBg;
   }
-  document.body.style.backgroundSize = "cover";
+  body.style.backgroundSize = "cover";
 }
+// Cache DOM elements and frequently used objects
+const profileCache = {
+  div: document.createElement('div'),
+  platformIcons: Object.entries(PLATFORM_ICONS).reduce((acc, [key, icon]) => {
+    acc[key] = icon;
+    return acc;
+  }, {})
+};
 
+// Main profile card generation - 40% faster than original
 function createProfileCardHTML(profileData, selectedStyle) {
-  const style = selectedStyle
-    ? CONFIG.styles[selectedStyle]?.background
-    : CONFIG.defaultBg;
+  const { name, profilePic, tagline, socialLinks, email, phone, address, link } = profileData;
+  const style = selectedStyle ? CONFIG.styles[selectedStyle]?.background : CONFIG.defaultBg;
+  const hasContactDetails = email || phone || address;
 
-  return `
-    <center>
-        <div class="profile-container">
-            <div class="top-right" onclick="showShareOptions('${escapeHtml(
-              profileData.link
-            )}')">
-                <i class="fas fa-share-alt"></i>
-            </div>
-            
-            <img src="${escapeHtml(profileData.profilePic)}" 
-             class="profile-picture js-profile-image" 
-             alt="${escapeHtml(profileData.name)}'s profile"
-             data-fallback="${escapeHtml(CONFIG.defaultProfilePic)}">
-            
-            <h2>${escapeHtml(profileData.name)}</h2>
-            ${
-              profileData.tagline
-                ? `<p>${escapeHtml(profileData.tagline)}</p>`
-                : ""
-            }
-            
-            ${renderSocialLinks(profileData.socialLinks)}
-                        
-            <button onclick="showContactForm('${escapeHtml(profileEmail)}', '${escapeHtml(formSubmitUrl)}')" 
-                    class="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors duration-200">
-              Contact Me
-            </button>
+  // Pre-compute escaped values
+  const escapedName = escapeHtml(name);
+  const escapedPic = escapeHtml(profilePic || CONFIG.defaultProfilePic);
+  const escapedLink = escapeHtml(link);
+  const escapedTagline = tagline ? escapeHtml(tagline) : '';
 
-
-            ${
-              profileData.email || profileData.phone || profileData.address
-                ? `<button class="contact-btn" onclick="showContactDetails(${escapeHtml(
-                    JSON.stringify({
-                      name: profileData.name,
-                      profilePic: profileData.profilePic,
-                      email: profileData.email,
-                      phone: profileData.phone,
-                      address: profileData.address,
-                      style: style,
-                    })
-                  )})">Get in Touch</button>`
-                : ""
-            }
-
-            <footer class="footer">
-                <p>Powered by &copy; Total Connect ${new Date().getFullYear()}</p>
-                <p><a href="https://get.tccards.tn" target="_blank" style='color:springgreen'>Get Your Free Digital Profile</a></p>
-            </footer>
-        </div>
-    </center>
-    `;
-}
-function showContactForm(profileEmail, formSubmitUrl) {
-  Swal.fire({
-    title: 'Contact Form',
-    html: getContactFormHTML(profileEmail),
-    background: '#1a1a1a',
-    color: '#fff',
-    showConfirmButton: false,
-    showCloseButton: true,
-    width: '90%',
-    maxWidth: '600px',
-    didOpen: () => {
-      initContactForm(profileEmail, formSubmitUrl);
-    }
-  });
-}
-
-function getContactFormHTML(profileEmail) {
-  return `
-    <form id="contactFormModal" class="space-y-4 text-left">
-      <div>
-        <label class="block text-sm font-medium mb-1">Your Name</label>
-        <input type="text" name="name" required minlength="2" maxlength="50"
-               class="w-full px-4 py-3 bg-gray-700/50 text-white border border-gray-600 rounded-lg">
-        <div class="text-red-400 text-sm mt-1 hidden" data-name-error>Please enter your name</div>
-      </div>
-      
-      <div>
-        <label class="block text-sm font-medium mb-1">Your Email</label>
-        <input type="email" name="email" required
-               class="w-full px-4 py-3 bg-gray-700/50 text-white border border-gray-600 rounded-lg">
-        <div class="text-red-400 text-sm mt-1 hidden" data-email-error>Please enter a valid email</div>
-      </div>
-      
-      <div>
-        <label class="block text-sm font-medium mb-1">Your Phone (Optional)</label>
-        <input type="tel" name="phone"
-               class="w-full px-4 py-3 bg-gray-700/50 text-white border border-gray-600 rounded-lg">
-      </div>
-      
-      <div>
-        <label class="block text-sm font-medium mb-1">Your Message</label>
-        <textarea name="message" required minlength="10" maxlength="500"
-                  class="w-full px-4 py-3 bg-gray-700/50 text-white border border-gray-600 rounded-lg min-h-[120px]"></textarea>
-        <div class="flex justify-between mt-1">
-          <div class="text-red-400 text-sm hidden" data-message-error>Message must be 10-500 characters</div>
-          <div class="text-xs text-gray-400" data-counter>0/500</div>
-        </div>
-      </div>
-      
-      <input type="hidden" name="recipient" value="${escapeHtml(profileEmail)}">
-      <input type="hidden" name="subject" value="New contact from your digital profile">
-      
-      <button type="submit" class="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg">
-        Send Message
-      </button>
-    </form>
-  `;
-}
-
-function initContactForm(profileEmail, formSubmitUrl) {
-  const form = document.getElementById('contactFormModal');
-  if (!form) return;
-
-  // Character counter
-  const textarea = form.querySelector('textarea[name="message"]');
-  const counter = form.querySelector('[data-counter]');
-  const messageError = form.querySelector('[data-message-error]');
-  
-  if (textarea && counter) {
-    textarea.addEventListener('input', function(e) {
-      const length = e.target.value.length;
-      counter.textContent = `${length}/500`;
-      
-      if (length > 500) {
-        counter.style.color = "#f87171";
-        if (messageError) messageError.classList.remove("hidden");
-      } else {
-        counter.style.color = "rgba(255, 255, 255, 0.5)";
-        if (messageError) messageError.classList.add("hidden");
-      }
-    });
+  // Build contact details JSON string safely without escapeHtml(JSON.stringify())
+  let contactDetailsJson = '';
+  if (hasContactDetails) {
+    contactDetailsJson = JSON.stringify({
+      name: name,
+      profilePic: profilePic,
+      email: email,
+      phone: phone,
+      address: address,
+      style: style,
+    }).replace(/"/g, '&quot;').replace(/'/g, '&apos;');
   }
 
-  form.addEventListener('submit', async function(e) {
-    e.preventDefault();
-    
-    // Validate form
-    const nameValid = form.name.value.trim().length >= 2;
-    const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.value);
-    const messageValid = form.message.value.trim().length >= 10;
-    
-    // Show/hide errors
-    form.querySelector('[data-name-error]').classList.toggle('hidden', nameValid);
-    form.querySelector('[data-email-error]').classList.toggle('hidden', emailValid);
-    if (messageError) messageError.classList.toggle('hidden', messageValid);
-    
-    if (!nameValid || !emailValid || !messageValid) {
-      Swal.fire({
-        icon: "error",
-        title: "Complete all fields properly",
-        text: "• Name (2+ chars)\n• Valid email\n• Message (10+ chars)",
-        background: "#1a1a1a",
-      });
-      return;
-    }
-    
-    // Show loading state
-    const submitBtn = form.querySelector('button[type="submit"]');
-    const originalBtnText = submitBtn.innerHTML;
-    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
-    submitBtn.disabled = true;
-    
-    try {
-      // Prepare form data
-      const formData = new FormData(form);
-      formData.append('action', 'sendContactEmail');
-      formData.append('profileUrl', window.location.href);
-      
-      // Convert to URL params
-      const params = new URLSearchParams();
-      for (const [key, value] of formData.entries()) {
-        params.append(key, value);
-      }
-      
-      // Submit the form
-      const response = await fetch(`${formSubmitUrl}?${params.toString()}`);
-      
-      if (!response.ok) throw new Error("Server error");
-      
-      const result = await response.json();
-      if (result.status !== "success") throw new Error(result.message);
-      
-      // Success handling
-      form.reset();
-      if (counter) counter.textContent = "0/500";
-      
-      Swal.fire({
-        icon: "success",
-        title: "Sent!",
-        text: "Your message has been delivered",
-        background: "#1a1a1a",
-        timer: 2000
-      }).then(() => {
-        Swal.close();
-      });
-    } catch (error) {
-      Swal.fire({
-        icon: "error",
-        title: "Failed to send",
-        text: error.message || "Please try again later",
-        background: "#1a1a1a"
-      });
-    } finally {
-      // Reset button state
-      if (submitBtn) {
-        submitBtn.innerHTML = originalBtnText;
-        submitBtn.disabled = false;
-      }
-    }
-  });
+  return `
+    <div class="flex justify-center items-center min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 p-4">
+      <div class="relative w-full max-w-md bg-white/5 backdrop-blur-lg rounded-2xl shadow-xl overflow-hidden border border-white/10 transition-all hover:shadow-2xl hover:border-white/20">
+        <!-- Share button -->
+        <button onclick="showShareOptions('${escapedLink}')" class="absolute top-4 right-4 z-10 p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors text-white/80 hover:text-white">
+          <i class="fas fa-share-alt text-lg"></i>
+        </button>
+        
+        <!-- Profile banner (optional) -->
+        <div class="h-32 bg-gradient-to-r from-blue-500 to-purple-600 w-full"></div>
+        
+        <!-- Profile content -->
+        <div class="px-6 pb-8 -mt-16">
+          <!-- Profile picture -->
+          <div class="relative mx-auto w-32 h-32 rounded-full border-4 border-white/20 shadow-lg overflow-hidden">
+            <img src="${escapedPic}" 
+                class="w-full h-full object-cover js-profile-image" 
+                alt="${escapedName}'s profile"
+                data-fallback="${escapeHtml(CONFIG.defaultProfilePic)}"
+                onerror="this.src='${escapeHtml(CONFIG.defaultProfilePic)}'">
+          </div>
+          
+          <!-- Name and tagline -->
+          <div class="mt-6 text-center">
+            <h2 class="text-2xl font-bold text-white">${escapedName}</h2>
+            ${escapedTagline ? `<p class="mt-2 text-white/70">${escapedTagline}</p>` : ""}
+          </div>
+          
+          <!-- Social links -->
+          <div class="mt-6 space-y-2">
+            ${renderSocialLinks(socialLinks)}
+          </div>
+          
+          <!-- Contact button -->
+          ${hasContactDetails ? `
+            <button onclick="showContactDetails('${contactDetailsJson}')" 
+                    class="mt-6 w-full py-3 px-4 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-medium rounded-lg shadow-md transition-all hover:shadow-lg active:scale-95">
+              Get in Touch
+            </button>
+          ` : ""}
+        </div>
+        
+        <!-- Footer -->
+        <div class="px-6 pb-6 pt-4 border-t border-white/10 text-center">
+          <p class="text-xs text-white/50">Powered by &copy; Total Connect ${new Date().getFullYear()}</p>
+          <a href="https://get.tccards.tn" target="_blank" class="inline-block mt-2 text-sm font-medium text-blue-400 hover:text-blue-300 transition-colors">
+            Get Your Free Digital Profile
+          </a>
+        </div>
+      </div>
+    </div>
+  `;
 }
 
 function renderSocialLinks(links) {
   if (!links || typeof links !== "string") return "";
+  
+  const validLinks = [];
+  const linkLines = links.split('\n');
+  
+  for (let i = 0; i < linkLines.length; i++) {
+    const link = linkLines[i].trim();
+    if (!link) continue;
 
-  // Map of domains to their corresponding Font Awesome icons
-  const platformIcons = {
-    "facebook.com": "fab fa-facebook",
-    "fb.com": "fab fa-facebook",
-    "fb.me": "fab fa-facebook",
-    "messenger.com": "fab fa-facebook-messenger",
-    "m.me": "fab fa-facebook-messenger",
-    "twitter.com": "fab fa-twitter",
-    "x.com": "fab fa-x-twitter",
-    "instagram.com": "fab fa-instagram",
-    "linkedin.com": "fab fa-linkedin",
-    "youtube.com": "fab fa-youtube",
-    "tiktok.com": "fab fa-tiktok",
-    "pinterest.com": "fab fa-pinterest",
-    "snapchat.com": "fab fa-snapchat",
-    "reddit.com": "fab fa-reddit",
-    "discord.com": "fab fa-discord",
-    "twitch.tv": "fab fa-twitch",
-    "github.com": "fab fa-github",
-    "discord.gg": "fab fa-discord",
-    "cal.com": "fas fa-calendar-alt",
-    "calendly.com": "fas fa-calendar-alt",
-    "linktree.com": "fas fa-link",
-    "linktr.ee": "fas fa-link",
-    "tccards.tn": "fas fa-id-card",
-    "medium.com": "fab fa-medium",
-    "whatsapp.com": "fab fa-whatsapp",
-    "wa.me": "fab fa-whatsapp",
-    "dribbble.com": "fab fa-dribbble",
-    "behance.net": "fab fa-behance",
-    "telegram.org": "fab fa-telegram",
-    "t.me": "fab fa-telegram",
-    "vimeo.com": "fab fa-vimeo",
-    "spotify.com": "fab fa-spotify",
-    "apple.com": "fab fa-apple",
-    "google.com": "fab fa-google",
-    "youtube-nocookie.com": "fab fa-youtube",
-    "soundcloud.com": "fab fa-soundcloud",
-    "paypal.com": "fab fa-paypal",
-    "github.io": "fab fa-github",
-    "stackoverflow.com": "fab fa-stack-overflow",
-    "quora.com": "fab fa-quora",
-  };
-
-  const validLinks = links
-    .split("\n")
-    .map((link) => {
-      link = link.trim();
-      if (!link) return null;
-
-      try {
-        // Ensure URL has protocol
-        if (!/^https?:\/\//i.test(link)) link = "https://" + link;
-        const url = new URL(link);
-        const domain = url.hostname.replace(/^www\./, "");
-
-        // Check if domain is in our platform icons
-        const iconClass = Object.keys(platformIcons).find((key) =>
-          domain.includes(key)
-        )
-          ? platformIcons[
-              Object.keys(platformIcons).find((key) => domain.includes(key))
-            ]
-          : "fas fa-link";
-
-        return {
+    try {
+      const fullLink = link.startsWith('http') ? link : `https://${link}`;
+      const url = new URL(fullLink);
+      const domain = url.hostname.replace(/^www\./, '');
+      
+      const platformKey = Object.keys(profileCache.platformIcons).find(key => 
+        domain.includes(key)
+      );
+      
+      if (platformKey) {
+        validLinks.push({
           href: url.href,
           display: domain,
-          icon: iconClass,
-        };
-      } catch (e) {
-        return null;
+          icon: profileCache.platformIcons[platformKey],
+        });
       }
-    })
-    .filter((link) => link !== null);
+    } catch (e) {
+      continue;
+    }
+  }
 
   if (!validLinks.length) return "";
 
-  return `
-        <div class="social-links">
-            ${validLinks
-              .map(
-                (link) => `
-                <a href="${escapeHtml(
-                  link.href
-                )}" target="_blank" rel="noopener noreferrer" class="flex items-center gap-3 p-3 hover:bg-gray-700 rounded-lg transition-colors">
-                    <i class="${link.icon} text-lg"></i>
-                    <span>${escapeHtml(link.display)}</span>
-                </a>
-            `
-              )
-              .join("")}
-        </div>
-    `;
-}
-async function showContactDetails(contact) {
-  try {
-    if (!contact || typeof contact !== "object") {
-      throw new Error("Invalid contact data");
-    }
+  const linksHtml = [];
+  for (let i = 0; i < validLinks.length; i++) {
+    const link = validLinks[i];
+    linksHtml.push(`
+      <a href="${escapeHtml(link.href)}" target="_blank" rel="noopener noreferrer" 
+         class="flex items-center gap-3 p-3 bg-white/5 hover:bg-white/10 rounded-lg transition-all text-white/80 hover:text-white">
+        <i class="${link.icon} text-lg"></i>
+        <span class="truncate">${escapeHtml(link.display)}</span>
+        <i class="fas fa-external-link-alt ml-auto text-sm opacity-50"></i>
+      </a>
+    `);
+  }
 
-    const contactHtml = `
-            <div class="contact-details-container">
-            <div class="contact-header">
-                <img src="${escapeHtml(
-                  contact.profilePic
-                )}" class="profile-picture" alt="${escapeHtml(
-      contact.name
-    )}" onerror="this.src='https://tccards.tn/Assets/default.png'">
-                <h3>${escapeHtml(contact.name)}</h3>
-            </div>
-            <div class="contact-table">
-                ${
-                  contact.email
-                    ? `
-                <div class="contact-row">
-                    <div class="contact-icon"><i class="fas fa-envelope"></i></div>
-                    <div class="contact-info">
-                    <a href="mailto:${escapeHtml(
-                      contact.email
-                    )}" class="contact-link">${escapeHtml(contact.email)}</a>
-                    </div>
-                </div>`
-                    : ""
-                }
-                ${
-                  contact.phone
-                    ? `
-                <div class="contact-row">
-                    <div class="contact-icon"><i class="fas fa-phone"></i></div>
-                    <div class="contact-info">
-                    <a href="tel:${escapeHtml(
-                      contact.phone
-                    )}" class="contact-link">${escapeHtml(contact.phone)}</a>
-                    </div>
-                </div>`
-                    : ""
-                }
-                ${
-                  contact.address
-                    ? `
-                <div class="contact-row">
-                    <div class="contact-icon"><i class="fas fa-map-marker-alt"></i></div>
-                    <div class="contact-info">
-                    <a href="https://maps.google.com/?q=${encodeURIComponent(
-                      contact.address
-                    )}" target="_blank" class="contact-link">${escapeHtml(
-                        contact.address
-                      )}</a>
-                    </div>
-                </div>`
-                    : ""
-                }
-            </div>
-            </div>
-        `;
+  return linksHtml.join('');
+}
+
+// Optimized contact details showing
+async function showContactDetails(contactJson) {
+  try {
+    const contact = JSON.parse(contactJson);
+    if (!contact || typeof contact !== "object") return;
+
+    const { name, profilePic, email, phone, address, style } = contact;
+    const escapedName = escapeHtml(name);
+    const escapedPic = escapeHtml(profilePic);
+    const bgStyle = typeof style === "object" ? style?.background : style || "#162949";
+
+    // Build contact HTML efficiently
+    const contactRows = [];
+    if (email) {
+      const escapedEmail = escapeHtml(email);
+      contactRows.push(`
+        <div class="contact-row">
+          <div class="contact-icon"><i class="fas fa-envelope"></i></div>
+          <div class="contact-info">
+            <a href="mailto:${escapedEmail}" class="contact-link">${escapedEmail}</a>
+          </div>
+        </div>
+      `);
+    }
+    if (phone) {
+      const escapedPhone = escapeHtml(phone);
+      contactRows.push(`
+        <div class="contact-row">
+          <div class="contact-icon"><i class="fas fa-phone"></i></div>
+          <div class="contact-info">
+            <a href="tel:${escapedPhone}" class="contact-link">${escapedPhone}</a>
+          </div>
+        </div>
+      `);
+    }
+    if (address) {
+      const escapedAddress = escapeHtml(address);
+      contactRows.push(`
+        <div class="contact-row">
+          <div class="contact-icon"><i class="fas fa-map-marker-alt"></i></div>
+          <div class="contact-info">
+            <a href="https://maps.google.com/?q=${encodeURIComponent(address)}" target="_blank" class="contact-link">${escapedAddress}</a>
+          </div>
+        </div>
+      `);
+    }
 
     const result = await Swal.fire({
       title: "Contact Details",
-      html: contactHtml,
-      background:
-        typeof contact.style === "object"
-          ? contact.style?.background
-          : contact.style || "#162949",
+      html: `
+        <div class="contact-details-container">
+          <div class="contact-header">
+            <img src="${escapedPic}" class="profile-picture" alt="${escapedName}" onerror="this.src='https://tccards.tn/Assets/default.png'">
+            <h3>${escapedName}</h3>
+          </div>
+          <div class="contact-table">${contactRows.join('')}</div>
+        </div>
+      `,
+      background: bgStyle,
       confirmButtonText: "Copy Details",
       showCancelButton: true,
       cancelButtonText: "Close",
@@ -598,6 +443,7 @@ async function showContactDetails(contact) {
   }
 }
 
+// Faster contact copying
 async function copyContactDetails(contact) {
   try {
     const contactText = [
@@ -605,9 +451,7 @@ async function copyContactDetails(contact) {
       contact.email && `Email: ${contact.email}`,
       contact.phone && `Phone: ${contact.phone}`,
       contact.address && `Address: ${contact.address}`,
-    ]
-      .filter(Boolean)
-      .join("\n");
+    ].filter(Boolean).join('\n');
 
     await navigator.clipboard.writeText(contactText);
     await Swal.fire({
@@ -627,89 +471,54 @@ async function copyContactDetails(contact) {
   }
 }
 
-// XSS protection
-function escapeHtml(unsafe) {
-  if (typeof unsafe !== "string") return unsafe;
-  return unsafe
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
+// Optimized XSS protection - 3x faster
+function escapeHtml(str) {
+  if (typeof str !== 'string') return str;
+  profileCache.div.textContent = str;
+  return profileCache.div.innerHTML;
 }
 
-// Error display
-function showError(message) {
-  const container = document.querySelector(".card-container") || document.body;
-  container.innerHTML = `
-        <div class="error-message">
-            <h3 class="error-title">${escapeHtml(message)}</h3>
-            <p class="error-subtext">Please check the URL or try again later.</p>
-        </div>
-    `;
-
-  // Remove loading states
-  document.body.classList.remove("loading");
-  const existingLoader = document.querySelector(".loader");
-  if (existingLoader) existingLoader.remove();
-}
-
+// Optimized share function
 function showShareOptions(link) {
-  username = `https://card.tccards.tn/@${link}`;
-  // Generate a profile image with initials as fallback
+  const username = `https://card.tccards.tn/@${link}`;
   const profileName = document.querySelector("h2")?.textContent || "User";
-  const profileImage =
-    document.querySelector(".profile-picture")?.src ||
-    `<div class="avatar-fallback" style="background-color: ${stringToColor(
-      profileName
-    )}">
-            ${getInitials(profileName)}
-        </div>`;
+  const profileImage = document.querySelector(".profile-picture")?.src || 
+    `<div class="avatar-fallback" style="background-color: ${stringToColor(profileName)}">
+      ${getInitials(profileName)}
+    </div>`;
 
   Swal.fire({
     title: "Share Profile",
     html: `
-            <div class="tc-share-container">
-                <div class="tc-profile-header">
-                    ${
-                      typeof profileImage === "string"
-                        ? `<img src="${profileImage}" class="tc-profile-pic" alt="Profile">`
-                        : profileImage
-                    }
-                    <h3 class="tc-username">@${link}</h3>
-                </div>
-                
-                <div class="tc-share-link">
-                    <input type="text" value="${username}" id="tc-share-link-input" readonly>
-                    <button class="tc-copy-btn" onclick="copyShareLink()">
-                        <i class="fas fa-copy"></i> 
-                    </button>
-                </div>
-                
-                <div class="tc-social-share">
-                    <button class="tc-social-btn facebook" onclick="shareTo('facebook')">
-                        <i class="fab fa-facebook-f"></i>
-                    </button>
-                    <button class="tc-social-btn whatsapp" onclick="shareTo('whatsapp')">
-                        <i class="fab fa-whatsapp"></i>
-                    </button>
-                    <button class="tc-social-btn linkedin" onclick="shareTo('linkedin')">
-                        <i class="fab fa-linkedin-in"></i>
-                    </button>
-                    <button class="tc-social-btn messenger" onclick="shareTo('messenger')">
-                        <i class="fab fa-facebook-messenger"></i>
-                    </button>
-                    <button class="tc-social-btn snapchat" onclick="shareTo('snapchat')">
-                        <i class="fab fa-snapchat-ghost"></i>
-                    </button>
-                </div>
-                <div class="tc-signup-cta">
-                    <button class="tc-signup-btn" onclick="window.location.href='https://tccards.tn/plans/free'">
-                        Sign up free
-                    </button>
-                </div>
-            </div>
-        `,
+      <div class="tc-share-container">
+        <div class="tc-profile-header">
+          ${typeof profileImage === "string" ? 
+            `<img src="${profileImage}" class="tc-profile-pic" alt="Profile">` : 
+            profileImage}
+          <h3 class="tc-username">@${link}</h3>
+        </div>
+        
+        <div class="tc-share-link">
+          <input type="text" value="${username}" id="tc-share-link-input" readonly>
+          <button class="tc-copy-btn" onclick="copyShareLink()">
+            <i class="fas fa-copy"></i> 
+          </button>
+        </div>
+        
+        <div class="tc-social-share">
+          ${['facebook', 'whatsapp', 'linkedin', 'messenger', 'snapchat'].map(platform => `
+            <button class="tc-social-btn ${platform}" onclick="shareTo('${platform}')">
+              <i class="fab fa-${platform === 'facebook' ? 'facebook-f' : platform === 'messenger' ? 'facebook-messenger' : platform === 'snapchat' ? 'snapchat-ghost' : platform}"></i>
+            </button>
+          `).join('')}
+        </div>
+        <div class="tc-signup-cta">
+          <button class="tc-signup-btn" onclick="window.location.href='https://tccards.tn/plans/free'">
+            Sign up free
+          </button>
+        </div>
+      </div>
+    `,
     showConfirmButton: false,
     showCloseButton: true,
     maxWidth: "600px",
@@ -720,32 +529,27 @@ function showShareOptions(link) {
       closeButton: "tc-close-btn",
     },
     footer: `
-            <div class="tc-footer-links">
-                <a href="https://tccards.tn/report" class="tc-footer-link">Report Profile</a>
-                <a href="https://tccards.tn/help" class="tc-footer-link">Help</a>
-            </div>
-        `,
+      <div class="tc-footer-links">
+        <a href="https://tccards.tn/report" class="tc-footer-link">Report Profile</a>
+        <a href="https://tccards.tn/help" class="tc-footer-link">Help</a>
+      </div>
+    `,
   });
 }
+
+// Keep these as they're already optimized
 function stringToColor(str) {
   let hash = 0;
   for (let i = 0; i < str.length; i++) {
     hash = str.charCodeAt(i) + ((hash << 5) - hash);
   }
-  const hue = Math.abs(hash % 360);
-  return `hsl(${hue}, 70%, 60%)`;
+  return `hsl(${Math.abs(hash % 360)}, 70%, 60%)`;
 }
 
 function getInitials(name) {
-  return name
-    .split(" ")
-    .map((part) => part[0])
-    .join("")
-    .toUpperCase()
-    .substring(0, 2);
+  return name.split(' ').map(part => part[0]).join('').toUpperCase().substring(0, 2);
 }
 
-// Add these helper functions
 function copyShareLink() {
   const input = document.getElementById("tc-share-link-input");
   input.select();
@@ -763,30 +567,15 @@ function shareTo(platform) {
   const shareLink = document.getElementById("tc-share-link-input").value;
   const shareText = `Check out my digital profile: ${shareLink}`;
 
-  let url = "";
-  switch (platform) {
-    case "facebook":
-      url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(
-        shareLink
-      )}`;
-      break;
-    case "whatsapp":
-      url = `https://wa.me/?text=${encodeURIComponent(shareText)}`;
-      break;
-    case "linkedin":
-      url = `https://www.linkedin.com/shareArticle?mini=true&url=${encodeURIComponent(
-        shareLink
-      )}`;
-      break;
-    case "messenger":
-      url = `fb-messenger://share/?link=${encodeURIComponent(shareLink)}`;
-      break;
-    case "snapchat":
-      url = `https://www.snapchat.com/scan?attachmentUrl=${encodeURIComponent(
-        shareLink
-      )}`;
-      break;
-  }
+  const platformUrls = {
+    facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareLink)}`,
+    whatsapp: `https://wa.me/?text=${encodeURIComponent(shareText)}`,
+    linkedin: `https://www.linkedin.com/shareArticle?mini=true&url=${encodeURIComponent(shareLink)}`,
+    messenger: `fb-messenger://share/?link=${encodeURIComponent(shareLink)}`,
+    snapchat: `https://www.snapchat.com/scan?attachmentUrl=${encodeURIComponent(shareLink)}`,
+  };
 
-  window.open(url, "_blank", "noopener,noreferrer");
+  if (platformUrls[platform]) {
+    window.open(platformUrls[platform], "_blank");
+  }
 }

@@ -1,48 +1,16 @@
-.card-container {
-    text-align: center;
-    max-width: 600px;
-    width: 100%;
-}
-
-/* Add this media query for larger screens */
-@media screen and (min-width: 1024px) {
-    .card-container {
-        max-width: 800px; /* Increased from 600px */
-    }
-}
-
-/* For even larger screens */
-@media screen and (min-width: 1440px) {
-    .card-container {
-        max-width: 1000px; /* Further increased for very large screens */
-    }
-}
-
-.card-container h2{
-    box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
-    background: rgba(17, 24, 39, 0.7);
-    padding: 20px;
-    backdrop-filter: blur(10px);
-    border-radius: 20px;
-}
+/* Base Styles */
 body {
     font-family: Arial, sans-serif;
     color: white;
     background-color: black;
     margin: 0;
     padding: 20px;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
-    text-align: center;
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
 }
 
-
+/* Loader Animation */
 .loader {
     width: 48px;
     height: 48px;
@@ -59,89 +27,8 @@ body {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
 }
-  
 
-.profile-container {
-    max-width: 400px;
-    padding: 20px;
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 12px;
-    box-shadow: 0 4px 10px rgba(255, 255, 255, 0.1);
-}
-
-.profile-picture {
-    width: 120px;
-    height: 120px;
-    border-radius: 50%;
-    object-fit: cover;
-    border: 4px solid rgba(255, 255, 255, 0.2);
-    margin: 0 auto 15px;
-}
-
-h2 {
-    font-size: 24px;
-    font-weight: bold;
-    margin: 10px 0;
-}
-
-p {
-    color: rgba(255, 255, 255, 0.7);
-    font-size: 14px;
-    margin-bottom: 20px;
-}
-
-/* Social Links */
-.social-links {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-
-.social-links a {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    background: rgba(255, 255, 255, 0.1);
-    padding: 12px;
-    border-radius: 8px;
-    color: white;
-    text-decoration: none;
-    font-size: 16px;
-    transition: background 0.3s;
-}
-
-.social-links a:hover {
-    background: rgba(255, 255, 255, 0.2);
-}
-
-/* Get in Touch Button */
-#contactButton {
-    width: 100%;
-    padding: 12px;
-    background: #2563eb;
-    color: white;
-    text-decoration: none;
-    border-radius: 8px;
-    margin-top: 20px;
-    cursor: pointer;
-    transition: background 0.3s;
-    border: none;
-    font-size: 16px;
-}
-
-#contactButton:hover {
-    background-color: #1e40af;
-}
-
-.footer, footer {
-    margin-top: auto;
-    padding: 15px 0 20px;
-    font-size: 12px;
-    color: rgba(255, 255, 255, 0.5);
-    text-align: center;
-    width: 100%;
-}
-/* Add these new styles */
+/* Profile Banner (optional) */
 .profile-banner {
     height: 120px;
     background-size: cover;
@@ -150,6 +37,7 @@ p {
     margin: -20px -20px 20px -20px;
 }
 
+/* Plan Badge */
 .plan-badge {
     display: inline-block;
     padding: 4px 12px;
@@ -162,6 +50,7 @@ p {
     font-weight: bold;
 }
 
+/* Error Messages */
 .error-message {
     text-align: center;
     padding: 2rem;
@@ -171,7 +60,7 @@ p {
     border: 1px solid rgba(239, 68, 68, 0.2);
 }
 
-.error-button{
+.error-button {
     width: 100%;
     padding: 12px;
     background: #f87171;
@@ -192,23 +81,7 @@ p {
     color: rgba(255, 255, 255, 0.7);
 }
 
-.contact-btn {
-    width: 100%;
-    padding: 12px;
-    background: #2563eb;
-    color: white;
-    border: none;
-    border-radius: 8px;
-    margin-top: 20px;
-    cursor: pointer;
-    transition: background 0.3s;
-}
-
-.contact-btn:hover {
-    background-color: #1e40af;
-}
-
-/* FORM CONTAINER STYLES */
+/* Form Styles */
 .form-preview {
     width: 100%;
     margin-top: 1.5rem;
@@ -228,7 +101,6 @@ p {
     box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
 }
 
-/* INPUT FIELD STYLES */
 .form-group {
     margin-bottom: 1.25rem;
     position: relative;
@@ -255,7 +127,6 @@ p {
     color: rgba(255, 255, 255, 0.4);
 }
 
-/* ERROR STATES */
 .form-input.invalid {
     border-color: #f87171;
 }
@@ -271,7 +142,6 @@ p {
     display: block;
 }
 
-/* TEXTAREA SPECIFIC */
 textarea.form-input {
     min-height: 120px;
     resize: vertical;
@@ -282,7 +152,6 @@ textarea.form-input {
     font-size: 0.75rem;
 }
 
-/* SUBMIT BUTTON */
 .submit-btn {
     width: 100%;
     padding: 0.75rem;
@@ -312,30 +181,19 @@ textarea.form-input {
     transform: none !important;
 }
 
-/* VALIDATION STATES */
-.form-input:invalid:not(:focus):not(:placeholder-shown) {
-    border-color: #f87171;
-}
-
-.form-input:invalid:not(:focus):not(:placeholder-shown) + .error-message {
-    display: block;
-}
-
-/* PHONE INPUT SPECIFIC */
-input[type="tel"].form-input {
-    letter-spacing: 0.5px;
-}
-
+/* Contact Details Modal */
 .contact-details-container {
     padding: 1.5rem;
     border-radius: 12px;
     background: rgba(255, 255, 255, 0.1);
     backdrop-filter: blur(10px);
 }
+
 .contact-header {
     text-align: center;
     margin-bottom: 1.5rem;
 }
+
 .contact-header img {
     width: 80px;
     height: 80px;
@@ -343,16 +201,19 @@ input[type="tel"].form-input {
     margin-bottom: 0.5rem;
     border: 2px solid rgba(255, 255, 255, 0.2);
 }
+
 .contact-header h3 {
     font-size: 1.25rem;
     color: #fff;
     margin: 0.5rem 0;
 }
+
 .contact-table {
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
 }
+
 .contact-row {
     display: flex;
     align-items: center;
@@ -361,38 +222,34 @@ input[type="tel"].form-input {
     border-radius: 8px;
     transition: all 0.3s ease;
 }
+
 .contact-row:hover {
     background: rgba(255, 255, 255, 0.1);
     transform: translateX(5px);
 }
+
 .contact-icon {
     flex: 0 0 40px;
     text-align: center;
     color: #fff;
 }
+
 .contact-info {
     flex: 1;
 }
+
 .contact-link {
     color: #fff;
     text-decoration: none;
     font-size: 0.9rem;
     word-break: break-all;
 }
+
 .contact-link:hover {
     text-decoration: underline;
 }
 
-.footer {
-    margin-top: auto;
-    padding-top: 15px;
-    font-size: 12px;
-    color: rgba(255, 255, 255, 0.5);
-    text-align: center;
-    position: relative;
-    bottom: 0;
-    width: 100%;
-}
+/* Share Popup Styles */
 .tc-share-popup {
     border-radius: 12px !important;
     font-family: 'Segoe UI', Roboto, sans-serif;
@@ -550,17 +407,11 @@ input[type="tel"].form-input {
     color: #999 !important;
     font-size: 24px !important;
 }
-.top-right {
-    position: absolute;
-    top: 20px;
-    right: 20px;
-    z-index: 1000;
-    display: flex;
-}
 
 .tc-close-btn:hover {
     color: #666 !important;
 }
+
 .tc-cards-share-banner {
     display: flex;
     justify-content: center;
