@@ -1,3 +1,36 @@
+.card-container {
+    text-align: center;
+    max-width: 600px;
+    width: 100%;
+}
+
+@media screen and (min-width: 1024px) {
+    .card-container {
+        max-width: 800px;
+    }
+}
+
+@media screen and (min-width: 1440px) {
+    .card-container {
+        max-width: 1000px;
+    }
+}
+
+.card-container h2 {
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+    background: rgba(17, 24, 39, 0.7);
+    padding: 20px;
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+}
+
+.profile-container {
+    max-width: 400px;
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    box-shadow: 0 4px 10px rgba(255, 255, 255, 0.1);
+}
 /* Base Styles */
 body {
     font-family: Arial, sans-serif;

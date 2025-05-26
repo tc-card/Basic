@@ -255,7 +255,7 @@ function createProfileCardHTML(profileData, selectedStyle) {
   }
 
   return `
-    <div class="flex justify-center items-center min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 p-4">
+    <div class="flex justify-center items-center min-h-screen p-4">
       <div class="relative w-full max-w-md bg-white/5 backdrop-blur-lg rounded-2xl shadow-xl overflow-hidden border border-white/10 transition-all hover:shadow-2xl hover:border-white/20">
         <!-- Share button -->
         <button onclick="showShareOptions('${escapedLink}')" class="absolute top-4 right-4 z-10 p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors text-white/80 hover:text-white">
