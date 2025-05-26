@@ -193,8 +193,7 @@ function escapeHtml(unsafe) {
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
 }
-
-// Make this function available globally
+// In formHandler.js, ensure these are at the bottom:
 window.openFormModal = function(profileEmail, formSubmitUrl) {
   initFormHandler(profileEmail, formSubmitUrl);
   document.getElementById('formModal').style.display = 'block';

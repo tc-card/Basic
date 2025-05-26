@@ -625,3 +625,36 @@ input[type="tel"].form-input {
       transform: translateY(0);
     }
   }
+  /* Button Group Styles */
+.button-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 20px;
+    width: 100%;
+  }
+  
+  .contact-btn {
+    width: 100%;
+    padding: 12px;
+    background: #2563eb;
+    color: white;
+    text-decoration: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.3s;
+    border: none;
+    font-size: 16px;
+  }
+  
+  .contact-btn:hover {
+    background-color: #1e40af;
+  }
+  
+  .direct-contact-btn {
+    background: #4f46e5;
+  }
+  
+  .direct-contact-btn:hover {
+    background: #4338ca;
+  }
