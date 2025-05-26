@@ -288,7 +288,7 @@ function createProfileCardHTML(profileData, selectedStyle) {
     : CONFIG.defaultBg;
 
   return `
-    <center>
+    <div class="flex justify-center w-full">
         <div class="profile-container">
             <div class="top-right" onclick="showShareOptions('${escapeHtml(
               profileData.link
@@ -302,11 +302,7 @@ function createProfileCardHTML(profileData, selectedStyle) {
              data-fallback="${escapeHtml(CONFIG.defaultProfilePic)}">
             
             <h2>${escapeHtml(profileData.name)}</h2>
-            ${
-              profileData.tagline
-                ? `<p>${escapeHtml(profileData.tagline)}</p>`
-                : ""
-            }
+            ${profileData.tagline ? `<p>${escapeHtml(profileData.tagline)}</p>` : ""}
             
             ${renderSocialLinks(profileData.socialLinks)}
                         
@@ -314,8 +310,7 @@ function createProfileCardHTML(profileData, selectedStyle) {
                 ${renderProfileForm(profileData.form, CONFIG.submitUrl)}
             </div>
 
-            ${
-              profileData.email || profileData.phone || profileData.address
+            ${profileData.email || profileData.phone || profileData.address
                 ? `<button class="contact-btn" onclick="showContactDetails(${escapeHtml(
                     JSON.stringify({
                       name: profileData.name,
@@ -325,17 +320,17 @@ function createProfileCardHTML(profileData, selectedStyle) {
                       address: profileData.address,
                       style: style,
                     })
-                  )})">Get in Touch</button>`
-                : ""
-            }
-
+                  )})">
+                    Get in Touch
+                   </button>`
+                : ""}
             <footer class="footer">
                 <p>Powered by &copy; Total Connect ${new Date().getFullYear()}</p>
                 <p><a href="https://get.tccards.tn" target="_blank" style='color:springgreen'>Get Your Free Digital Profile</a></p>
             </footer>
         </div>
-    </center>
-    `;
+    </div>
+  `;
 }
 function renderSocialLinks(links) {
   if (!links || typeof links !== "string") return "";
