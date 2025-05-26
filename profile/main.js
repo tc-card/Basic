@@ -176,6 +176,7 @@ function applyBackgroundStyle(selectedStyle) {
   document.body.style.backgroundSize = "cover";
 }
 
+// In main.js, modify the createProfileCardHTML function:
 function createProfileCardHTML(profileData, selectedStyle) {
   const style = selectedStyle
     ? CONFIG.styles[selectedStyle]?.background
@@ -203,10 +204,14 @@ function createProfileCardHTML(profileData, selectedStyle) {
             }
             
             ${renderSocialLinks(profileData.socialLinks)}
-                        
-            <div id="form-preview" class="mt-4">
-                ${renderProfileForm(profileData.form, CONFIG.submitUrl)}
-            </div>
+            
+            ${
+              profileData.form
+                ? `<button class="contact-btn" onclick="openFormModal('${escapeHtml(profileData.form)}', '${escapeHtml(CONFIG.submitUrl)}')">
+                    Contact Me
+                  </button>`
+                : ""
+            }
 
             ${
               profileData.email || profileData.phone || profileData.address

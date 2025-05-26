@@ -1,75 +1,88 @@
-//function to render the contact form
+// formHandler.js
 export function renderProfileForm(profileEmail, formSubmitUrl) {
   return `
-    <h3 class="text-xl font-semibold mb-6 text-white text-center">Contact Form</h3>
-    <form id="contactForm" class="space-y-4" novalidate>
-      <!-- Name Field -->
-      <div>
-        <input 
-          type="text" 
-          name="name" 
-          placeholder="Your Name" 
-          class="w-full px-4 py-3 bg-gray-700/50 text-white border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-          required
-          minlength="2"
-          maxlength="50"
-        >
-        <div class="text-red-400 text-sm mt-1 hidden">Please enter your name</div>
+    <div class="form-modal-container">
+      <div class="form-modal-content">
+        <button class="close-form-btn" onclick="closeFormModal()">
+          <i class="fas fa-times"></i>
+        </button>
+        <h3 class="text-xl font-semibold mb-6 text-white text-center">Contact Form</h3>
+        <form id="contactForm" class="space-y-4" novalidate>
+          <!-- Name Field -->
+          <div>
+            <input 
+              type="text" 
+              name="name" 
+              placeholder="Your Name" 
+              class="w-full px-4 py-3 bg-gray-700/50 text-white border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+              required
+              minlength="2"
+              maxlength="50"
+            >
+            <div class="text-red-400 text-sm mt-1 hidden">Please enter your name</div>
+          </div>
+          
+          <!-- Email Field -->
+          <div>
+            <input 
+              type="email" 
+              name="email" 
+              placeholder="Your Email" 
+              class="w-full px-4 py-3 bg-gray-700/50 text-white border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+              required
+            >
+            <div class="text-red-400 text-sm mt-1 hidden">Please enter a valid email</div>
+          </div>
+          
+          <!-- Phone Field -->
+          <div>
+            <input 
+              type="tel" 
+              name="phone" 
+              placeholder="Your Phone (Optional)" 
+              class="w-full px-4 py-3 bg-gray-700/50 text-white border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+            >
+          </div>
+          
+          <!-- Message Field -->
+          <div>
+            <textarea 
+              name="message" 
+              placeholder="Your Message/Inquiry" 
+              class="w-full px-4 py-3 bg-gray-700/50 text-white border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all min-h-[120px]"
+              required
+              minlength="10"
+              maxlength="500"
+            ></textarea>
+            <div class="flex justify-between mt-1">
+              <div class="text-red-400 text-sm hidden" data-error>Message must be 10-500 characters</div>
+              <div class="text-xs text-gray-400" data-counter>0/500</div>
+            </div>
+          </div>
+          
+          <!-- Hidden Fields -->
+          <input type="hidden" name="action" value="sendContactEmail">
+          <input type="hidden" name="recipient" value="${escapeHtml(profileEmail)}">
+          <input type="hidden" name="subject" value="New contact from your digital profile">
+          
+          <!-- Submit Button -->
+          <button type="submit" class="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-800">
+            Send Message
+          </button>
+        </form>
       </div>
-      
-      <!-- Email Field -->
-      <div>
-        <input 
-          type="email" 
-          name="email" 
-          placeholder="Your Email" 
-          class="w-full px-4 py-3 bg-gray-700/50 text-white border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-          required
-        >
-        <div class="text-red-400 text-sm mt-1 hidden">Please enter a valid email</div>
-      </div>
-      
-      <!-- Phone Field -->
-      <div>
-        <input 
-          type="tel" 
-          name="phone" 
-          placeholder="Your Phone (Optional)" 
-          class="w-full px-4 py-3 bg-gray-700/50 text-white border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-        >
-      </div>
-      
-      <!-- Message Field -->
-      <div>
-        <textarea 
-          name="message" 
-          placeholder="Your Message/Inquiry" 
-          class="w-full px-4 py-3 bg-gray-700/50 text-white border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all min-h-[120px]"
-          required
-          minlength="10"
-          maxlength="500"
-        ></textarea>
-        <div class="flex justify-between mt-1">
-          <div class="text-red-400 text-sm hidden" data-error>Message must be 10-500 characters</div>
-          <div class="text-xs text-gray-400" data-counter>0/500</div>
-        </div>
-      </div>
-      
-      <!-- Hidden Fields -->
-      <input type="hidden" name="action" value="sendContactEmail">
-      <input type="hidden" name="recipient" value="${escapeHtml(profileEmail)}">
-      <input type="hidden" name="subject" value="New contact from your digital profile">
-      
-      <!-- Submit Button -->
-      <button type="submit" class="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-800">
-        Send Message
-      </button>
-    </form>
+    </div>
   `;
 }
 
 // Function to initialize form handling
 export function initFormHandler(profileEmail, formSubmitUrl) {
+  // Create modal container
+  const modalContainer = document.createElement('div');
+  modalContainer.id = 'formModal';
+  modalContainer.innerHTML = renderProfileForm(profileEmail, formSubmitUrl);
+  document.body.appendChild(modalContainer);
+  
   const form = document.getElementById("contactForm");
   
   if (!form) return;
@@ -150,6 +163,9 @@ export function initFormHandler(profileEmail, formSubmitUrl) {
         background: "#1a1a1a",
         timer: 2000
       });
+      
+      // Close the form after successful submission
+      closeFormModal();
     } catch (error) {
       Swal.fire({
         icon: "error",
@@ -177,3 +193,16 @@ function escapeHtml(unsafe) {
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
 }
+
+// Make this function available globally
+window.openFormModal = function(profileEmail, formSubmitUrl) {
+  initFormHandler(profileEmail, formSubmitUrl);
+  document.getElementById('formModal').style.display = 'block';
+};
+
+window.closeFormModal = function() {
+  const modal = document.getElementById('formModal');
+  if (modal) {
+    modal.remove();
+  }
+};
