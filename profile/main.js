@@ -1,3 +1,59 @@
+// Call this function when you receive profile data
+searchDatabases(CONFIG.databases, identifier, isIdLookup)
+  .then(profileData => {
+    // Your existing profile rendering code
+    renderProfileCard(data);
+    
+    // Update meta tags with profile data
+    updateMetaTags(profileData);
+  });
+
+  
+function updateMetaTags(profileData) {
+  // Update basic meta tags
+  document.title = `${profileData.name} | Total Connect NFC`;
+  document.querySelector('meta[name="description"]').content = `${profileData.name}'s digital business card - ${profileData.title || 'Professional Profile'}`;
+  
+  // Update Open Graph tags
+  document.querySelector('meta[property="og:title"]').content = `${profileData.name} - Total Connect NFC`;
+  document.querySelector('meta[property="og:description"]').content = `${profileData.name}'s digital business card - ${profileData.title || 'Professional Profile'}`;
+  if (profileData.profilePicture) {
+    document.querySelector('meta[property="og:image"]').content = profileData.profilePicture;
+  }
+  document.querySelector('meta[property="og:url"]').content = window.location.href;
+  
+  // Update Twitter Card tags
+  document.querySelector('meta[name="twitter:title"]').content = `${profileData.name} - Total Connect NFC`;
+  document.querySelector('meta[name="twitter:description"]').content = `${profileData.name}'s digital business card - ${profileData.title || 'Professional Profile'}`;
+  if (profileData.profilePicture) {
+    document.querySelector('meta[name="twitter:image"]').content = profileData.profilePicture;
+  }
+  
+  // Add structured data for better SEO
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@type": "Person",
+    "name": profileData.name,
+    "jobTitle": profileData.title,
+    "image": profileData.profilePicture || CONFIG.defaultProfilePic,
+    "url": window.location.href,
+    "sameAs": [
+      profileData.linkedin,
+      profileData.twitter,
+      // Add other social links
+    ].filter(Boolean)
+  };
+  
+  // Add or update structured data script tag
+  let scriptTag = document.querySelector('#structured-data');
+  if (!scriptTag) {
+    scriptTag = document.createElement('script');
+    scriptTag.id = 'structured-data';
+    scriptTag.type = 'application/ld+json';
+    document.head.appendChild(scriptTag);
+  }
+  scriptTag.textContent = JSON.stringify(structuredData);
+}
 
 import { renderProfileForm, initFormHandler } from './formHandler.js';
 // Configuration - moved to top for easy maintenance
@@ -23,6 +79,8 @@ const CONFIG = {
     },
   },
 };
+
+
 
 document.addEventListener("DOMContentLoaded", function () {
   // Set initial background
@@ -101,6 +159,52 @@ async function fetchWithTimeout(resource, options = {}) {
   return response;
 }
 
+function updateMetaTags(profileData) {
+  // Update basic meta tags
+  document.title = `${profileData.name} | Total Connect NFC`;
+  document.querySelector('meta[name="description"]').content = `${profileData.name}'s digital business card - ${profileData.title || 'Professional Profile'}`;
+  
+  // Update Open Graph tags
+  document.querySelector('meta[property="og:title"]').content = `${profileData.name} - Total Connect NFC`;
+  document.querySelector('meta[property="og:description"]').content = `${profileData.name}'s digital business card - ${profileData.title || 'Professional Profile'}`;
+  if (profileData.profilePicture) {
+    document.querySelector('meta[property="og:image"]').content = profileData.profilePicture;
+  }
+  document.querySelector('meta[property="og:url"]').content = window.location.href;
+  
+  // Update Twitter Card tags
+  document.querySelector('meta[name="twitter:title"]').content = `${profileData.name} - Total Connect NFC`;
+  document.querySelector('meta[name="twitter:description"]').content = `${profileData.name}'s digital business card - ${profileData.title || 'Professional Profile'}`;
+  if (profileData.profilePicture) {
+    document.querySelector('meta[name="twitter:image"]').content = profileData.profilePicture;
+  }
+  
+  // Add structured data for better SEO
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@type": "Person",
+    "name": profileData.name,
+    "jobTitle": profileData.title,
+    "image": profileData.profilePicture || CONFIG.defaultProfilePic,
+    "url": window.location.href,
+    "sameAs": [
+      profileData.linkedin,
+      profileData.twitter,
+      // Add other social links
+    ].filter(Boolean)
+  };
+  
+  // Add or update structured data script tag
+  let scriptTag = document.querySelector('#structured-data');
+  if (!scriptTag) {
+    scriptTag = document.createElement('script');
+    scriptTag.id = 'structured-data';
+    scriptTag.type = 'application/ld+json';
+    document.head.appendChild(scriptTag);
+  }
+  scriptTag.textContent = JSON.stringify(structuredData);
+}
+
 function handleProfileData(data) {
   try {
     const loader = document.querySelector(".loader");
@@ -148,6 +252,8 @@ function renderProfileCard(data) {
     phone: data.Phone || "",
     address: data.Address || "",
   };
+
+  updateMetaTags(profileData);
 
   // Apply background style if available
   applyBackgroundStyle(data["Selected Style"]);
@@ -279,7 +385,7 @@ function renderSocialLinks(links) {
   };
 
   const validLinks = links
-    .split(",")
+    .split("\n")
     .map((link) => {
       link = link.trim();
       if (!link) return null;
@@ -617,3 +723,4 @@ function shareTo(platform) {
 
   window.open(url, "_blank", "noopener,noreferrer");
 }
+
