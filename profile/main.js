@@ -140,7 +140,6 @@ function renderProfileCard(data) {
     email: data.Email || '',
     phone: data.Phone || '',
     address: data.Address || '',
-    formSubmitUrl: data['Form Submit URL'] || 'https://script.google.com/macros/s/AKfycbxU8axs4Xduqc84jj_utLsi-pCxSEyw9exEO7PuNo940qQ1bJ4-NxREnUgVhdzS9plb/exec',
     style: data['Selected Style'] || 'royalGradient'
   };
 
@@ -164,23 +163,6 @@ function renderProfileCard(data) {
         handleFormSubmit(e, profileData.formType, profileData.email, profileData.formSubmitUrl);
       });
     }
-  }
-
-  // Show welcome notification
-  if (typeof Swal !== 'undefined') {
-    Swal.fire({
-      icon: 'success',
-      title: `Welcome to ${profileData.name}'s profile`,
-      text: 'Tap to interact with the profile',
-      background: '#1e1b4b',
-      color: '#fff',
-      backdrop: `
-        rgba(0,0,0,0.5)
-        url("/images/nyan-cat.gif")
-        left top
-        no-repeat
-      `
-    });
   }
 }
 
@@ -431,36 +413,38 @@ function showShareOptions(link) {
   Swal.fire({
     title: 'Share Profile',
     html: `
-      <div class="text-center">
-        <img src="${profileImage}" class="w-20 h-20 rounded-full mx-auto mb-4 object-cover border-2 border-white/20" onerror="this.src='${CONFIG.defaultProfilePic}'">
-        <h3 class="text-xl font-bold text-white mb-2">${profileName}</h3>
-        <p class="text-gray-300 mb-4">Share this profile with others</p>
-        
-        <div class="flex items-center bg-gray-800 rounded-lg overflow-hidden mb-6">
-          <input type="text" value="${shareUrl}" id="share-link-input" class="flex-1 bg-transparent text-white p-3 outline-none" readonly>
-          <button onclick="copyShareLink()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-3">
-            <i class="fas fa-copy"></i>
-          </button>
+      <div class="text-center p-6 max-w-md mx-auto bg-gray-900 rounded-xl shadow-lg overflow-hidden">
+        <div class="flex flex-col items-center">
+          <img src="${profileImage}" class="w-24 h-24 rounded-full mx-auto mb-4 object-cover border-4 border-indigo-500/30 shadow-md" onerror="this.src='${CONFIG.defaultProfilePic}'">
+          <h3 class="text-2xl font-bold text-white mb-2">${profileName}</h3>
+          <p class="text-gray-300 mb-6 text-sm">Share this profile with your connections</p>
+          
+          <div class="w-full mb-6 relative">
+            <input type="text" value="${shareUrl}" id="share-link-input" class="w-full bg-gray-800 text-white p-3 pr-12 rounded-lg outline-none border border-gray-700 focus:border-indigo-500 transition-all" readonly>
+            <button onclick="copyShareLink()" class="absolute right-2 top-1/2 transform -translate-y-1/2 bg-indigo-600 hover:bg-indigo-700 text-white p-2 rounded-md transition-colors" title="Copy link">
+              <i class="fas fa-copy"></i>
+            </button>
+          </div>
+          
+          <div class="grid grid-cols-4 gap-3 mb-6">
+            <button onclick="shareTo('facebook')" class="w-12 h-12 rounded-full bg-[#1877f2] text-white flex items-center justify-center hover:scale-110 transition-transform" title="Share on Facebook">
+              <i class="fab fa-facebook-f text-xl"></i>
+            </button>
+            <button onclick="shareTo('whatsapp')" class="w-12 h-12 rounded-full bg-[#25d366] text-white flex items-center justify-center hover:scale-110 transition-transform" title="Share on WhatsApp">
+              <i class="fab fa-whatsapp text-xl"></i>
+            </button>
+            <button onclick="shareTo('linkedin')" class="w-12 h-12 rounded-full bg-[#0a66c2] text-white flex items-center justify-center hover:scale-110 transition-transform" title="Share on LinkedIn">
+              <i class="fab fa-linkedin-in text-xl"></i>
+            </button>
+            <button onclick="shareTo('telegram')" class="w-12 h-12 rounded-full bg-[#0088cc] text-white flex items-center justify-center hover:scale-110 transition-transform" title="Share on Telegram">
+              <i class="fab fa-telegram-plane text-xl"></i>
+            </button>
+          </div>
+          
+          <a href="https://get.tccards.tn" target="_blank" class="inline-block bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-medium py-3 px-8 rounded-full hover:shadow-lg transition-all hover:scale-105">
+            Create Your Own Profile
+          </a>
         </div>
-        
-        <div class="flex justify-center space-x-4 mb-6">
-          <button onclick="shareTo('facebook')" class="w-12 h-12 rounded-full bg-[#1877f2] text-white flex items-center justify-center hover:scale-110">
-            <i class="fab fa-facebook-f text-xl"></i>
-          </button>
-          <button onclick="shareTo('whatsapp')" class="w-12 h-12 rounded-full bg-[#25d366] text-white flex items-center justify-center hover:scale-110">
-            <i class="fab fa-whatsapp text-xl"></i>
-          </button>
-          <button onclick="shareTo('linkedin')" class="w-12 h-12 rounded-full bg-[#0a66c2] text-white flex items-center justify-center hover:scale-110">
-            <i class="fab fa-linkedin-in text-xl"></i>
-          </button>
-          <button onclick="shareTo('telegram')" class="w-12 h-12 rounded-full bg-[#0088cc] text-white flex items-center justify-center hover:scale-110">
-            <i class="fab fa-telegram-plane text-xl"></i>
-          </button>
-        </div>
-        
-        <a href="https://get.tccards.tn" target="_blank" class="inline-block bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-medium py-2 px-6 rounded-full hover:shadow-lg">
-          Create Your Own
-        </a>
       </div>
     `,
     showConfirmButton: false,
@@ -530,7 +514,7 @@ function showError(message) {
   container.innerHTML = `
     <div class="error-state fade-in-up">
       <h3 class="error-title">Error</h3>
-      <p class="error-message">${escapeHtml(message)}</p>
+      <h3 class="error-message">${escapeHtml(message)}</h3>
       <p class="text-gray-400 text-sm">Please check the URL or try again later.</p>
       <button onclick="window.location.href='https://tccards.tn'" class="w-full mt-4 bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-lg">
         Return Home
