@@ -203,31 +203,25 @@ function createProfileCardHTML(profileData, selectedStyle) {
             }
             
             ${renderSocialLinks(profileData.socialLinks)}
-            
-            <div class="button-group">
-              ${
-                profileData.form
-                  ? `<button class="contact-btn" onclick="openFormModal('${escapeHtml(profileData.form)}', '${escapeHtml(CONFIG.submitUrl)}')">
-                      Contact Form
-                    </button>`
-                  : ""
-              }
-
-              ${
-                profileData.email || profileData.phone || profileData.address
-                  ? `<button class="contact-btn direct-contact-btn" onclick="showContactDetails(${escapeHtml(
-                      JSON.stringify({
-                        name: profileData.name,
-                        profilePic: profileData.profilePic,
-                        email: profileData.email,
-                        phone: profileData.phone,
-                        address: profileData.address,
-                        style: style,
-                      })
-                    )})">Direct Contact</button>`
-                  : ""
-              }
+                        
+            <div id="form-preview" class="mt-4">
+                ${renderProfileForm(profileData.form, CONFIG.submitUrl)}
             </div>
+
+            ${
+              profileData.email || profileData.phone || profileData.address
+                ? `<button class="contact-btn" onclick="showContactDetails(${escapeHtml(
+                    JSON.stringify({
+                      name: profileData.name,
+                      profilePic: profileData.profilePic,
+                      email: profileData.email,
+                      phone: profileData.phone,
+                      address: profileData.address,
+                      style: style,
+                    })
+                  )})">Get in Touch</button>`
+                : ""
+            }
 
             <footer class="footer">
                 <p>Powered by &copy; Total Connect ${new Date().getFullYear()}</p>
