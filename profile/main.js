@@ -213,9 +213,11 @@ function createProfileCardHTML(profileData, selectedStyle) {
             
             ${renderSocialLinks(profileData.socialLinks)}
                         
-            <div id="form-preview" class="mt-4">
-                ${renderProfileForm(profileData.form, CONFIG.submitUrl)}
-            </div>
+            <button onclick="showContactForm('${escapeHtml(profileEmail)}', '${escapeHtml(formSubmitUrl)}')" 
+                    class="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors duration-200">
+              Contact Me
+            </button>
+
 
             ${
               profileData.email || profileData.phone || profileData.address
@@ -240,174 +242,166 @@ function createProfileCardHTML(profileData, selectedStyle) {
     </center>
     `;
 }
-function renderProfileForm(profileEmail, formSubmitUrl) {
+function showContactForm(profileEmail, formSubmitUrl) {
+  Swal.fire({
+    title: 'Contact Form',
+    html: getContactFormHTML(profileEmail),
+    background: '#1a1a1a',
+    color: '#fff',
+    showConfirmButton: false,
+    showCloseButton: true,
+    width: '90%',
+    maxWidth: '600px',
+    didOpen: () => {
+      initContactForm(profileEmail, formSubmitUrl);
+    }
+  });
+}
+
+function getContactFormHTML(profileEmail) {
   return `
-    <script src="https://cdn.tailwindcss.com"></script>
-    <h3 class="text-xl font-semibold mb-6 text-white text-center">Contact Form</h3>
-    <form id="contactForm" class="space-y-4" novalidate>
-      <!-- Name Field -->
+    <form id="contactFormModal" class="space-y-4 text-left">
       <div>
-        <input 
-          type="text" 
-          name="name" 
-          placeholder="Your Name" 
-          class="w-full px-4 py-3 bg-gray-700/50 text-white border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-          required
-          minlength="2"
-          maxlength="50"
-        >
-        <div class="text-red-400 text-sm mt-1 hidden">Please enter your name</div>
+        <label class="block text-sm font-medium mb-1">Your Name</label>
+        <input type="text" name="name" required minlength="2" maxlength="50"
+               class="w-full px-4 py-3 bg-gray-700/50 text-white border border-gray-600 rounded-lg">
+        <div class="text-red-400 text-sm mt-1 hidden" data-name-error>Please enter your name</div>
       </div>
       
-      <!-- Email Field -->
       <div>
-        <input 
-          type="email" 
-          name="email" 
-          placeholder="Your Email" 
-          class="w-full px-4 py-3 bg-gray-700/50 text-white border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-          required
-        >
-        <div class="text-red-400 text-sm mt-1 hidden">Please enter a valid email</div>
+        <label class="block text-sm font-medium mb-1">Your Email</label>
+        <input type="email" name="email" required
+               class="w-full px-4 py-3 bg-gray-700/50 text-white border border-gray-600 rounded-lg">
+        <div class="text-red-400 text-sm mt-1 hidden" data-email-error>Please enter a valid email</div>
       </div>
       
-      <!-- Phone Field -->
       <div>
-        <input 
-          type="tel" 
-          name="phone" 
-          placeholder="Your Phone (Optional)" 
-          class="w-full px-4 py-3 bg-gray-700/50 text-white border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-        >
+        <label class="block text-sm font-medium mb-1">Your Phone (Optional)</label>
+        <input type="tel" name="phone"
+               class="w-full px-4 py-3 bg-gray-700/50 text-white border border-gray-600 rounded-lg">
       </div>
       
-      <!-- Message Field -->
       <div>
-        <textarea 
-          name="message" 
-          placeholder="Your Message/Inquiry" 
-          class="w-full px-4 py-3 bg-gray-700/50 text-white border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all min-h-[120px]"
-          required
-          minlength="10"
-          maxlength="500"
-        ></textarea>
+        <label class="block text-sm font-medium mb-1">Your Message</label>
+        <textarea name="message" required minlength="10" maxlength="500"
+                  class="w-full px-4 py-3 bg-gray-700/50 text-white border border-gray-600 rounded-lg min-h-[120px]"></textarea>
         <div class="flex justify-between mt-1">
-          <div class="text-red-400 text-sm hidden" data-error>Message must be 10-500 characters</div>
+          <div class="text-red-400 text-sm hidden" data-message-error>Message must be 10-500 characters</div>
           <div class="text-xs text-gray-400" data-counter>0/500</div>
         </div>
       </div>
       
-      <!-- Hidden Fields -->
-      <input type="hidden" name="action" value="sendContactEmail">
       <input type="hidden" name="recipient" value="${escapeHtml(profileEmail)}">
       <input type="hidden" name="subject" value="New contact from your digital profile">
       
-      <!-- Submit Button -->
-      <button type="submit" class="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-800">
+      <button type="submit" class="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg">
         Send Message
       </button>
     </form>
-    
-    <script>
-    document.addEventListener("DOMContentLoaded", function() {
-      const form = document.getElementById("contactForm");
+  `;
+}
+
+function initContactForm(profileEmail, formSubmitUrl) {
+  const form = document.getElementById('contactFormModal');
+  if (!form) return;
+
+  // Character counter
+  const textarea = form.querySelector('textarea[name="message"]');
+  const counter = form.querySelector('[data-counter]');
+  const messageError = form.querySelector('[data-message-error]');
+  
+  if (textarea && counter) {
+    textarea.addEventListener('input', function(e) {
+      const length = e.target.value.length;
+      counter.textContent = `${length}/500`;
       
-      if (form) {
-        // Character counter setup (same as before)
-        const textarea = form.querySelector('textarea[name="message"]');
-        const counter = form.querySelector("[data-counter]");
-        const errorElement = form.querySelector("[data-error]");
-        
-        if (textarea && counter && errorElement) {
-          textarea.addEventListener("input", function(e) {
-            const length = e.target.value.length;
-            counter.textContent = \`\${length}/500\`;
-            
-            if (length > 500) {
-              counter.style.color = "#f87171";
-              errorElement.classList.remove("hidden");
-            } else {
-              counter.style.color = "rgba(255, 255, 255, 0.5)";
-              errorElement.classList.add("hidden");
-            }
-          });
-        }
-        
-        // Modified submit handler to prevent reload
-        form.addEventListener("submit", async function(e) {
-          e.preventDefault();
-          
-          // Validate form
-          const nameValid = form.name.value.trim().length >= 2;
-          const emailValid = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(form.email.value);
-          const messageValid = form.message.value.trim().length >= 10;
-          
-          if (!nameValid || !emailValid || !messageValid) {
-            Swal.fire({
-              icon: "error",
-              title: "Complete all fields properly",
-              text: "• Name (2+ chars)\\n• Valid email\\n• Message (10+ chars)",
-              background: "#1a1a1a",
-            });
-            return;
-          }
-          
-          // Show loading state
-          const submitBtn = form.querySelector('button[type="submit"]');
-          const originalBtnText = submitBtn.innerHTML;
-          submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
-          submitBtn.disabled = true;
-          
-          try {
-            // Prepare URL parameters
-            const params = new URLSearchParams();
-            params.append("action", "sendContactEmail");
-            params.append("name", form.name.value.trim());
-            params.append("email", form.email.value.trim());
-            params.append("phone", form.phone.value.trim() || "");
-            params.append("message", form.message.value.trim());
-            params.append("recipient", "${escapeHtml(profileEmail)}");
-            params.append("subject", \`New message from \${form.name.value.trim()}\`);
-            params.append("profileUrl", window.location.href);
-            
-            // Submit via GET but using fetch() to prevent page reload
-            const response = await fetch(\`${escapeHtml(formSubmitUrl)}?\${params.toString()}\`);
-            
-            if (!response.ok) throw new Error("Server error");
-            
-            const result = await response.json();
-            if (result.status !== "success") throw new Error(result.message);
-            
-            // Success handling
-            form.reset();
-            if (counter) counter.textContent = "0/500";
-            
-            Swal.fire({
-              icon: "success",
-              title: "Sent!",
-              text: "Your message has been delivered",
-              background: "#1a1a1a",
-              timer: 2000
-            });
-          } catch (error) {
-            Swal.fire({
-              icon: "error",
-              title: "Failed to send",
-              text: error.message || "Please try again later",
-              background: "#1a1a1a"
-            });
-          } finally {
-            // Reset button state
-            if (submitBtn) {
-              submitBtn.innerHTML = originalBtnText;
-              submitBtn.disabled = false;
-            }
-          }
-        });
+      if (length > 500) {
+        counter.style.color = "#f87171";
+        if (messageError) messageError.classList.remove("hidden");
+      } else {
+        counter.style.color = "rgba(255, 255, 255, 0.5)";
+        if (messageError) messageError.classList.add("hidden");
       }
     });
-    </script>
-  `;
+  }
+
+  form.addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    // Validate form
+    const nameValid = form.name.value.trim().length >= 2;
+    const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.value);
+    const messageValid = form.message.value.trim().length >= 10;
+    
+    // Show/hide errors
+    form.querySelector('[data-name-error]').classList.toggle('hidden', nameValid);
+    form.querySelector('[data-email-error]').classList.toggle('hidden', emailValid);
+    if (messageError) messageError.classList.toggle('hidden', messageValid);
+    
+    if (!nameValid || !emailValid || !messageValid) {
+      Swal.fire({
+        icon: "error",
+        title: "Complete all fields properly",
+        text: "• Name (2+ chars)\n• Valid email\n• Message (10+ chars)",
+        background: "#1a1a1a",
+      });
+      return;
+    }
+    
+    // Show loading state
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const originalBtnText = submitBtn.innerHTML;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+    submitBtn.disabled = true;
+    
+    try {
+      // Prepare form data
+      const formData = new FormData(form);
+      formData.append('action', 'sendContactEmail');
+      formData.append('profileUrl', window.location.href);
+      
+      // Convert to URL params
+      const params = new URLSearchParams();
+      for (const [key, value] of formData.entries()) {
+        params.append(key, value);
+      }
+      
+      // Submit the form
+      const response = await fetch(`${formSubmitUrl}?${params.toString()}`);
+      
+      if (!response.ok) throw new Error("Server error");
+      
+      const result = await response.json();
+      if (result.status !== "success") throw new Error(result.message);
+      
+      // Success handling
+      form.reset();
+      if (counter) counter.textContent = "0/500";
+      
+      Swal.fire({
+        icon: "success",
+        title: "Sent!",
+        text: "Your message has been delivered",
+        background: "#1a1a1a",
+        timer: 2000
+      }).then(() => {
+        Swal.close();
+      });
+    } catch (error) {
+      Swal.fire({
+        icon: "error",
+        title: "Failed to send",
+        text: error.message || "Please try again later",
+        background: "#1a1a1a"
+      });
+    } finally {
+      // Reset button state
+      if (submitBtn) {
+        submitBtn.innerHTML = originalBtnText;
+        submitBtn.disabled = false;
+      }
+    }
+  });
 }
 
 function renderSocialLinks(links) {
@@ -458,7 +452,7 @@ function renderSocialLinks(links) {
   };
 
   const validLinks = links
-    .split(",")
+    .split("\n")
     .map((link) => {
       link = link.trim();
       if (!link) return null;
