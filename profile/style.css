@@ -201,21 +201,6 @@
     margin-right: 0.5rem;
     font-size: 1.1rem;
   }
-  .social-link.facebook-com { background: rgba(59, 89, 152, 0.2); }
-  .social-link.facebook-com:hover { background: rgba(59, 89, 152, 0.3); }
-  .social-link.facebook-com i { color: #3b5998; }
-  
-  .social-link.twitter-com,
-  .social-link.x-com { background: rgba(29, 161, 242, 0.2); }
-  .social-link.twitter-com:hover,
-  .social-link.x-com:hover { background: rgba(29, 161, 242, 0.3); }
-  .social-link.twitter-com i,
-  .social-link.x-com i { color: #1da1f2; }
-  
-  .social-link.instagram-com { background: rgba(225, 45, 102, 0.2); }
- .social-link.instagram-com:hover { background: rgba(225, 45, 102, 0.3); }
- .social-link.instagram-com i { color: #e12d66; }
-
 .tc-signup-cta {
     margin: 30px 0 20px;
     padding-top: 20px;

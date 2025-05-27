@@ -190,8 +190,7 @@ function renderProfileCard(data) {
     phone: data.Phone || '',
     address: data.Address || '',
     style: data['Selected Style'] || 'royalGradient',
-    formSubmitUrl: data['Form Submit URL'] || 'https://script.google.com/macros/s/AKfycbxU8axs4Xduqc84jj_utLsi-pCxSEyw9exEO7PuNo940qQ1bJ4-NxREnUgVhdzS9plb/exec'
-  };
+   };
 
   // Apply background style if available
   applyBackgroundStyle(profileData.style);
@@ -264,26 +263,6 @@ function createProfileCardHTML(profileData) {
         <button class="contact-btn secondary" onclick="showContactForm()">
           <i class="fas fa-envelope"></i> Contact Form
         </button>
-        <div class="form-container hidden">
-          <form id="contactForm">
-            <div class="form-group">
-              <input type="text" name="name" placeholder="Your Name" class="form-input" required>
-            </div>
-            <div class="form-group">
-              <input type="email" name="email" placeholder="Your Email" class="form-input" required>
-            </div>
-            <div class="form-group">
-              <input type="text" name="subject" placeholder="Subject" class="form-input" required>
-            </div>
-            <div class="form-group">
-              <textarea name="message" placeholder="Your Message" class="form-input" required></textarea>
-            </div>
-            <button type="submit" class="submit-btn">
-              <i class="fas fa-paper-plane"></i> Send Message
-            </button>
-          </form>
-        </div>
-      ` : ''}
 
       <div class="profile-footer">
         <p>Powered by &copy; Total Connect ${new Date().getFullYear()}</p>
@@ -315,71 +294,6 @@ function initImageFallback() {
       }
     }, 3000);
   });
-}
-
-function initContactForm(profileData) {
-  const form = document.getElementById('contactForm');
-  if (form) {
-    form.addEventListener('submit', function(e) {
-      e.preventDefault();
-      handleFormSubmit(e, profileData);
-    });
-  }
-}
-
-async function handleFormSubmit(e, profileData) {
-  const form = e.target;
-  const formData = new FormData(form);
-  const submitBtn = form.querySelector('button[type="submit"]');
-  
-  // Disable submit button during submission
-  submitBtn.disabled = true;
-  submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
-  
-  try {
-    // Add additional data to form
-    formData.append('to', profileData.email);
-    formData.append('profile', profileData.name);
-    
-    const response = await fetch(profileData.formSubmitUrl, {
-      method: 'POST',
-      body: formData
-    });
-    
-    if (!response.ok) throw new Error('Form submission failed');
-    
-    const result = await response.json();
-    
-    if (result.status === 'success') {
-      await Swal.fire({
-        icon: 'success',
-        title: 'Message Sent!',
-        text: 'Your message has been sent successfully',
-        background: '#1e1b4b',
-        color: '#fff'
-      });
-      form.reset();
-    } else {
-      throw new Error(result.message || 'Form submission failed');
-    }
-  } catch (error) {
-    console.error('Form submission error:', error);
-    await Swal.fire({
-      icon: 'error',
-      title: 'Error',
-      text: 'Failed to send message. Please try again later.',
-      background: '#1e1b4b',
-      color: '#fff'
-    });
-  } finally {
-    submitBtn.disabled = false;
-    submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Send Message';
-  }
-}
-
-function showContactForm() {
-  const formContainer = document.querySelector('.form-container');
-  formContainer.classList.toggle('hidden');
 }
 
 function renderSocialLinks(links) {
