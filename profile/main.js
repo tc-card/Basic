@@ -2,14 +2,10 @@
 const CONFIG = {
   defaultBg: "url(https://tccards.tn/Assets/bg.png) center fixed",
   defaultProfilePic: "https://tccards.tn/Assets/default.png",
-  submitUrl:
-    "https://script.google.com/macros/s/AKfycbzBI6WskjhTpezrIbUcveqY_EW8IJ5PUMQ0Aby6FJhpqo4sV-KfPtC3S668aNA7nYOL/exec",
-  databases: [
-    {
-      id: "AKfycbzPv8Rr4jM6Fcyjm6uelUtqw2hHLCFWYhXJlt6nWTIKaqUL_9j_41rwzhFGMlkF2nrG",
-      plan: "basic",
-    },
-  ],
+  databases: {
+    id: "AKfycbzPv8Rr4jM6Fcyjm6uelUtqw2hHLCFWYhXJlt6nWTIKaqUL_9j_41rwzhFGMlkF2nrG",
+    plan: "basic"
+  },
   styles: {
     corporateGradient: {
       background:
@@ -43,43 +39,36 @@ document.addEventListener("DOMContentLoaded", function () {
   const isIdLookup = hash.startsWith("id_");
   const identifier = isIdLookup ? hash.split("_")[1] : hash;
 
-  searchDatabases(CONFIG.databases, identifier, isIdLookup);
+  searchProfile(identifier, isIdLookup);
 });
 
-// Improved database search with better error handling
-async function searchDatabases(databases, identifier, isIdLookup, index = 0) {
+// Fast profile lookup using single database, redirects to 404.html on error
+async function searchProfile(identifier, isIdLookup) {
   try {
-    if (index >= databases.length) {
-      showError("Profile not found in any database");
-      return;
-    }
-
-    const db = databases[index];
     const param = isIdLookup ? "id" : "link";
-    const url = `https://script.google.com/macros/s/${
-      db.id
-    }/exec?${param}=${encodeURIComponent(identifier)}`;
+    const url = `https://script.google.com/macros/s/${CONFIG.databases.id}/exec?${param}=${encodeURIComponent(identifier)}`;
 
     const response = await fetchWithTimeout(url, {
-      timeout: 5000, // 5 second timeout
+      timeout: 5000
     });
 
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
 
     const data = await response.json();
-
     if (data?.status === "error") {
-      return searchDatabases(databases, identifier, isIdLookup, index + 1);
+      showError("Profile not found");
+      window.location.href = "/404.html";
+      return;
     }
 
     if (data && typeof data === "object") {
       handleProfileData(data);
     } else {
-      searchDatabases(databases, identifier, isIdLookup, index + 1);
+      showError("Invalid profile data");
     }
   } catch (error) {
-    console.error("Database search error:", error);
-    searchDatabases(databases, identifier, isIdLookup, index + 1);
+    console.error("Profile search error:", error);
+    showError("Failed to load profile");
   }
 }
 
@@ -269,7 +258,7 @@ function renderSocialLinks(links) {
   };
 
   const validLinks = links
-    .split(",")
+    .split("\n")
     .map((link) => {
       link = link.trim();
       if (!link) return null;
