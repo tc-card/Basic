@@ -92,22 +92,7 @@
                 color: #ffffff;
             }
         }        
-        .loader {
-            width: 60px;
-            height: 60px;
-            border: 4px solid rgba(255,255,255,0.1);
-            border-radius: 50%;
-            border-top-color: #6366f1;
-            animation: spin 1s ease-in-out infinite;
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-        }
-        
-        @keyframes spin {
-            to { transform: translate(-50%, -50%) rotate(360deg); }
-        }
+
     </style>
     <script>
         // Get the hash and remove the # symbol
@@ -146,15 +131,7 @@
         }
     </script>
 </head>
-<body class="font-inter bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 bg-fixed">
-    <!-- Animated Background Elements -->
-    <div class="fixed inset-0 overflow-hidden pointer-events-none">
-        <div class="absolute top-1/4 left-1/4 w-64 h-64 bg-purple-600 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
-        <div class="absolute top-1/3 right-1/4 w-64 h-64 bg-indigo-600 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
-        <div class="absolute bottom-1/4 left-1/2 w-64 h-64 bg-blue-600 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-4000"></div>
-    </div>
-    
-    <!-- Loading State -->
+<body>
     <div class="loader"></div>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </body>
