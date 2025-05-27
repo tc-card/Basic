@@ -472,7 +472,7 @@ function showShareOptions(link) {
   Swal.fire({
     title: "Share Profile",
     html: `
-      <div class="tc-share-container">
+      <div class="tc-share-container max-w-6xl">
         <div class="tc-profile-header">
           ${typeof profileImage === 'string' 
             ? `<img src="${profileImage}" class="tc-profile-pic" alt="Profile">` 
@@ -484,12 +484,12 @@ function showShareOptions(link) {
           <div class="tc-link-wrapper">
             <input type="text" value="${username}" id="tc-share-link-input" readonly>
             <button class="tc-copy-btn" onclick="copyShareLink()">
-              <i class="fas fa-copy"></i> Copy
+              <i class="fas fa-copy"></i>
             </button>
           </div>
         </div>
         
-        <div class="tc-social-share">
+        <div class="tc-social-share flex gap-4 overflow-x-auto py-4 [&::-webkit-scrollbar-thumb]:bg-blue-500 [&::-webkit-scrollbar]:horizontal">
           <button class="tc-social-btn facebook" onclick="shareTo('facebook')">
             <i class="fab fa-facebook-f"></i>
           </button>
@@ -518,7 +518,7 @@ function showShareOptions(link) {
     showCloseButton: true,
     maxWidth: "95%",
     width: "95%",
-    background: "#ffffff",
+    background: "linear-gradient(145deg, #ffffff, #f5f5f5, #ffffff)",
     customClass: {
       popup: "tc-share-popup",
       closeButton: "tc-close-btn",
