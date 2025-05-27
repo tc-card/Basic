@@ -488,7 +488,7 @@ function showShareOptions(link) {
           ${typeof profileImage === 'string' 
             ? `<img src="${profileImage}" class="tc-profile-pic" alt="Profile">` 
             : profileImage}
-          <h3 class="tc-username">@${link}</h3>
+          <h3 class="tc-username">${profileName}</h3>
         </div>
         
         <div class="tc-share-link">
