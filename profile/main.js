@@ -108,7 +108,8 @@ function handleProfileData(data) {
     }
 
     if (data?.Status && data.Status !== "Active") {
-      throw new Error("This profile is currently inactive");
+      showError("Your profile is not active. Please contact support to activate your profile.");
+      return;
     }
 
     renderProfileCard(data);
@@ -458,138 +459,43 @@ function showError(message) {
   const existingLoader = document.querySelector(".loader");
   if (existingLoader) existingLoader.remove();
 }
+async function showShareOptions(link) {
+    try {
+        // Check if Web Share API is supported
+        if (navigator.share) {
+            await navigator.share({
+                title: 'Check out this profile',
+                text: 'View my digital business card',
+                url: link
+            });
+        } else {
+            // Fallback for browsers that don't support Web Share API
+            const shareHtml = `
+                <div class="share-options">
+                    <h3>Share this profile</h3>
+                    <div class="share-links">
+                        <a href="https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(link)}" target="_blank" class="share-link facebook">Facebook</a>
+                        <a href="https://twitter.com/intent/tweet?url=${encodeURIComponent(link)}" target="_blank" class="share-link twitter">Twitter</a>
+                        <a href="https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(link)}" target="_blank" class="share-link linkedin">LinkedIn</a>
+                        <a href="https://api.whatsapp.com/send?text=${encodeURIComponent(link)}" target="_blank" class="share-link whatsapp">WhatsApp</a>
+                    </div>
+                </div>
+            `;
 
-function showShareOptions(link) {
-  username = `https://card.tccards.tn/@${link}`;
-  const profileName = document.querySelector("h2")?.textContent || "User";
-  const profileImage = 
-    document.querySelector(".profile-picture")?.src ||
-    `<div class="avatar-fallback" style="background-color: ${stringToColor(profileName)}; border-radius: 50%; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; font-size: 20px; color: white;">
-      ${getInitials(profileName)}
-    </div>`;
-
-  Swal.fire({
-    title: "Share Profile",
-    html: `
-      <div class="tc-share-container max-w-6xl">
-        <div class="tc-profile-header">
-          ${typeof profileImage === 'string' 
-            ? `<img src="${profileImage}" class="tc-profile-pic" alt="Profile">` 
-            : profileImage}
-          <h3 class="tc-username">${profileName}</h3>
-        </div>
-        
-        <div class="tc-share-link">
-          <div class="tc-link-wrapper">
-            <input type="text" value="${username}" id="tc-share-link-input" readonly>
-            <button class="tc-copy-btn" onclick="copyShareLink()">
-              <i class="fas fa-copy"></i>
-            </button>
-          </div>
-        </div>
-        
-        <div class="tc-social-share flex gap-4 overflow-x-auto py-4 [&::-webkit-scrollbar-thumb]:bg-blue-500 [&::-webkit-scrollbar]:horizontal">
-          <button class="tc-social-btn facebook" onclick="shareTo('facebook')">
-            <i class="fab fa-facebook-f"></i>
-          </button>
-          <button class="tc-social-btn whatsapp" onclick="shareTo('whatsapp')">
-            <i class="fab fa-whatsapp"></i>
-          </button>
-          <button class="tc-social-btn linkedin" onclick="shareTo('linkedin')">
-            <i class="fab fa-linkedin-in"></i>
-          </button>
-          <button class="tc-social-btn messenger" onclick="shareTo('messenger')">
-            <i class="fab fa-facebook-messenger"></i>
-          </button>
-          <button class="tc-social-btn snapchat" onclick="shareTo('snapchat')">
-            <i class="fab fa-snapchat-ghost"></i>
-          </button>
-        </div>
-        
-        <div class="tc-signup-cta">
-          <button class="tc-signup-btn" onclick="window.location.href='https://tccards.tn/plans/free'">
-            Sign up free
-          </button>
-        </div>
-      </div>
-    `,
-    showConfirmButton: false,
-    showCloseButton: true,
-    maxWidth: "95%",
-    width: "95%",
-    background: "linear-gradient(145deg, #ffffff, #f5f5f5, #ffffff)",
-    customClass: {
-      popup: "tc-share-popup",
-      closeButton: "tc-close-btn",
-    },
-    footer: `
-      <div class="tc-footer-links">
-        <a href="https://tccards.tn/report" class="tc-footer-link">Report Profile</a>
-        <a href="https://tccards.tn/help" class="tc-footer-link">Help</a>
-      </div>
-    `,
-  });
-}
-function stringToColor(str) {
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    hash = str.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  const hue = Math.abs(hash % 360);
-  return `hsl(${hue}, 70%, 60%)`;
-}
-
-function getInitials(name) {
-  return name
-    .split(" ")
-    .map((part) => part[0])
-    .join("")
-    .toUpperCase()
-    .substring(0, 2);
-}
-
-// Add these helper functions
-function copyShareLink() {
-  const input = document.getElementById("tc-share-link-input");
-  input.select();
-  document.execCommand("copy");
-  Swal.fire({
-    title: "Copied!",
-    text: "Link copied to clipboard",
-    icon: "success",
-    timer: 2000,
-    showConfirmButton: false,
-  });
-}
-
-function shareTo(platform) {
-  const shareLink = document.getElementById("tc-share-link-input").value;
-  const shareText = `Check out my digital profile: ${shareLink}`;
-
-  let url = "";
-  switch (platform) {
-    case "facebook":
-      url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(
-        shareLink
-      )}`;
-      break;
-    case "whatsapp":
-      url = `https://wa.me/?text=${encodeURIComponent(shareText)}`;
-      break;
-    case "linkedin":
-      url = `https://www.linkedin.com/shareArticle?mini=true&url=${encodeURIComponent(
-        shareLink
-      )}`;
-      break;
-    case "messenger":
-      url = `fb-messenger://share/?link=${encodeURIComponent(shareLink)}`;
-      break;
-    case "snapchat":
-      url = `https://www.snapchat.com/scan?attachmentUrl=${encodeURIComponent(
-        shareLink
-      )}`;
-      break;
-  }
-
-  window.open(url, "_blank", "noopener,noreferrer");
+            Swal.fire({
+                title: 'Share Profile',
+                html: shareHtml,
+                showCancelButton: true,
+                cancelButtonText: 'Close',
+                background: '#162949',
+                color: '#fff',
+                customClass: {
+                    confirmButton: 'swal-confirm-button',
+                    cancelButton: 'swal-cancel-button'
+                }
+            });
+        }
+    } catch (error) {
+        console.error('Error sharing:', error);
+    }
 }
