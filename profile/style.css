@@ -477,10 +477,9 @@ input[type="tel"].form-input {
     right: 15px;
     background: rgba(255, 255, 255, 0.1);
     padding: 8px;
+    padding-bottom: -2px;
+    color: white;
     border-radius: 50%;
     cursor: pointer;
     transition: all 0.3s ease;
 }
-
-.top-right:hover {
-    background:
