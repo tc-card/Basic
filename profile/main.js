@@ -107,11 +107,6 @@ function handleProfileData(data) {
       throw new Error("Invalid profile data: Name is required");
     }
 
-    if (data?.Status && data.Status !== "Active") {
-      showError("Your profile is not active. Please contact support to activate your profile.");
-      return;
-    }
-
     renderProfileCard(data);
   } catch (error) {
     console.error("Profile handling error:", error);
@@ -122,6 +117,11 @@ function handleProfileData(data) {
 function renderProfileCard(data) {
   const container = document.querySelector(".card-container");
   container.style.display = "block";
+
+  if (data?.Status && data.Status !== "Active") {
+    showError("Your profile is not active. Please contact support to activate your profile.");
+    return;
+  }
 
   // Prepare profile data with defaults
   const profileData = {
