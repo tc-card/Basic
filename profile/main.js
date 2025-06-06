@@ -120,7 +120,14 @@ function renderProfileCard(data) {
 
   if (data?.Status && data.Status !== "Active") {
     showError("Your profile is not active. Please contact support to activate your profile.");
-    return;
+    return`
+    
+    <center>
+        <div class="profile-container">
+            <h2 class="inactive-profile">Profile Inactive</h2>
+            <p>If you are having any issues please <a href="mailto:info@tccards.tn">contact us.</a></p>
+        </div>
+    </center>`;
   }
 
   // Prepare profile data with defaults
