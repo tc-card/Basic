@@ -37,6 +37,7 @@ document.addEventListener("DOMContentLoaded", function () {
   // Determine lookup type and start search
   const isIdLookup = hash.startsWith("id_");
   const identifier = isIdLookup ? hash.split("_")[1] : hash;
+  // E.g https://card.tccards.tn/@id_12345 or https://card.tccards.tn/@john-doe
 
   searchProfile(identifier, isIdLookup);
 });
@@ -113,109 +114,38 @@ function handleProfileData(data) {
     showError(error.message);
   }
 }
-
 function renderProfileCard(data) {
   const container = document.querySelector(".card-container");
   container.style.display = "block";
 
   if (data?.Status && data.Status !== "Active") {
     showError("Your profile is not active. Please contact support to activate your profile.");
-    return`
-    
-    <center>
-        <div class="profile-container">
-            <h2 class="inactive-profile">Profile Inactive</h2>
-            <p>If you are having any issues please <a href="mailto:info@tccards.tn">contact us.</a></p>
+    container.innerHTML = `
+    <div class="profile-container">
+        <div class="inactive-profile">
+            <h2>Profile Inactive</h2>
+            <p>If you are having any issues please <a href="mailto:info@tccards.tn">contact us</a></p>
         </div>
-    </center>`;
+    </div>`;
+    return;
   }
 
-  // Prepare profile data with defaults
+  // Rest of the code remains the same...
   const profileData = {
     name: data.Name || "User",
     link: data.Link || "tccards",
     tagline: data.Tagline || "",
     profilePic: data["Profile Picture URL"] || CONFIG.defaultProfilePic,
-    form: data["Form"] || "", // form email
+    form: data["Form"] || "",
     socialLinks: data["Social Links"] || "",
     email: data.Email || "",
     phone: data.Phone || "",
     address: data.Address || "",
+    status: data.Status,
   };
 
-  // Apply background style if available
   applyBackgroundStyle(data["Selected Style"]);
-
-  // Render the profile card
-  container.innerHTML = createProfileCardHTML(
-    profileData,
-    data["Selected Style"]
-  );
-
-}
-
-function applyBackgroundStyle(selectedStyle) {
-  if (!selectedStyle) return;
-
-  if (selectedStyle.startsWith("linear-gradient")) {
-    document.body.style.background = selectedStyle;
-  } else {
-    document.body.style.background =
-      CONFIG.styles[selectedStyle]?.background || CONFIG.defaultBg;
-  }
-  document.body.style.backgroundSize = "cover";
-}
-
-function createProfileCardHTML(profileData, selectedStyle) {
-  const style = selectedStyle
-    ? CONFIG.styles[selectedStyle]?.background
-    : CONFIG.defaultBg;
-
-  return `
-    <center>
-        <div class="profile-container">
-            <div class="top-right" onclick="showShareOptions('${escapeHtml(
-              profileData.link
-            )}')">
-                <i class="fas fa-share-alt"></i>
-            </div>
-            
-            <img src="${escapeHtml(profileData.profilePic)}" 
-             class="profile-picture js-profile-image" 
-             alt="${escapeHtml(profileData.name)}'s profile"
-             data-fallback="${escapeHtml(CONFIG.defaultProfilePic)}">
-            
-            <h2>${escapeHtml(profileData.name)}</h2>
-            ${
-              profileData.tagline
-                ? `<p>${escapeHtml(profileData.tagline)}</p>`
-                : ""
-            }
-            
-            ${renderSocialLinks(profileData.socialLinks)}
-
-            ${
-              profileData.email || profileData.phone || profileData.address
-                ? `<button class="contact-btn" onclick="showContactDetails(${escapeHtml(
-                    JSON.stringify({
-                      name: profileData.name,
-                      profilePic: profileData.profilePic,
-                      email: profileData.email,
-                      phone: profileData.phone,
-                      address: profileData.address,
-                      style: style,
-                    })
-                  )})">Get in Touch</button>`
-                : ""
-            }
-
-            <footer class="footer">
-                <p>Powered by &copy; Total Connect ${new Date().getFullYear()}</p>
-                <p><a href="https://get.tccards.tn" target="_blank" style='color:springgreen'>Get Your Free Digital Profile</a></p>
-            </footer>
-        </div>
-    </center>
-    `;
+  container.innerHTML = createProfileCardHTML(profileData, data["Selected Style"]);
 }
 function renderSocialLinks(links) {
   if (!links || typeof links !== "string") return "";
@@ -390,6 +320,7 @@ async function showContactDetails(contact) {
       color: "#fff",
       showLoaderOnConfirm: true,
       allowOutsideClick: false,
+      backdropFilter: "blur(5px)",
       customClass: {
         confirmButton: "swal-confirm-button",
         cancelButton: "swal-cancel-button",
