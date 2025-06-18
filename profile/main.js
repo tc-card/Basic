@@ -3,7 +3,7 @@ const CONFIG = {
   defaultProfilePic: "https://tccards.tn/Assets/default.png",
   databases: {
     id: "AKfycbzPv8Rr4jM6Fcyjm6uelUtqw2hHLCFWYhXJlt6nWTIKaqUL_9j_41rwzhFGMlkF2nrG",
-    plan: "basic"
+    plan: "basic",
   },
   styles: {
     corporateGradient: {
@@ -17,22 +17,63 @@ const CONFIG = {
   },
 };
 
-document.addEventListener("DOMContentLoaded", function () {
-  // Set initial background
-  document.body.style.background = CONFIG.defaultBg;
-  document.body.style.backgroundSize = "cover";
-  document.body.style.backdropFilter = "blur(5px)";
+// ===== NEW META TAG SYSTEM =====
+function updateMetaTags(profile) {
+  const title = profile?.name
+    ? `${profile.name} | tccards`
+    : "Profile Not Found";
+  const description = profile?.bio || "Digital business card profile";
+  const image = profile?.profilePic || CONFIG.defaultProfilePic;
+  const url = `https://card.tccards.tn/@${window.location.hash.substring(1)}`;
 
-  // Extract identifier from URL hash
+  // Update standard meta tags
+  document.title = title;
+  setMetaTag("description", description);
+  setMetaTag("og:title", title);
+  setMetaTag("og:description", description);
+  setMetaTag("og:image", image);
+  setMetaTag("og:url", url);
+  setMetaTag("twitter:card", "summary_large_image");
+
+  // Handle error cases
+  if (!profile || profile.error) {
+    setMetaTag("robots", "noindex");
+  }
+}
+
+function setMetaTag(name, content) {
+  let tag = document.querySelector(
+    `meta[name="${name}"], meta[property="${name}"]`
+  );
+  if (!tag) {
+    tag = document.createElement("meta");
+    name.startsWith("og:")
+      ? tag.setAttribute("property", name)
+      : tag.setAttribute("name", name);
+    document.head.appendChild(tag);
+  }
+  tag.setAttribute("content", content);
+}
+
+// ===== UPDATED INITIALIZATION =====
+document.addEventListener("DOMContentLoaded", function () {
+  // Existing hash handling (unchanged)
   const hash = window.location.hash.substring(1);
   if (!hash) {
+    updateMetaTags({ error: true });
     showError("No profile link provided");
     return;
   }
 
-  // Update URL without reload
+  // Enhanced URL handling
   const newUrl = `https://card.tccards.tn/@${hash}`;
   window.history.replaceState(null, null, newUrl);
+
+  // Initialize with loading meta
+  updateMetaTags({
+    name: "Loading...",
+    bio: "Profile is loading",
+  });
 
   // Determine lookup type and start search
   const isIdLookup = hash.startsWith("id_");
@@ -45,10 +86,12 @@ document.addEventListener("DOMContentLoaded", function () {
 async function searchProfile(identifier, isIdLookup) {
   try {
     const param = isIdLookup ? "id" : "link";
-    const url = `https://script.google.com/macros/s/${CONFIG.databases.id}/exec?${param}=${encodeURIComponent(identifier)}`;
+    const url = `https://script.google.com/macros/s/${
+      CONFIG.databases.id
+    }/exec?${param}=${encodeURIComponent(identifier)}`;
 
     const response = await fetchWithTimeout(url, {
-      timeout: 5000
+      timeout: 5000,
     });
 
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
@@ -62,10 +105,12 @@ async function searchProfile(identifier, isIdLookup) {
 
     if (data && typeof data === "object") {
       handleProfileData(data);
+      updateMetaTags(data);
     } else {
       showError("Invalid profile data");
     }
   } catch (error) {
+    updateMetaTags({ error: true });
     console.error("Profile search error:", error);
     showError("Failed to load profile");
   }
@@ -107,6 +152,7 @@ function handleProfileData(data) {
       throw new Error("Invalid profile data: Name is required");
     }
 
+    updateMetaTags(data);
     renderProfileCard(data);
   } catch (error) {
     console.error("Profile handling error:", error);
@@ -118,9 +164,10 @@ function renderProfileCard(data) {
   const container = document.querySelector(".card-container");
   container.style.display = "block";
 
-
   if (data?.status && data.status === "Inactive") {
-    showError("Your profile is not active. Please contact support to activate your profile.");
+    showError(
+      "Your profile is not active. Please contact support to activate your profile."
+    );
     container.innerHTML = `
     <div class="profile-container">
         <div class="inactive-profile">
@@ -153,7 +200,6 @@ function renderProfileCard(data) {
     profileData,
     data["Selected Style"]
   );
-
 }
 
 function applyBackgroundStyle(selectedStyle) {
@@ -213,7 +259,6 @@ function createProfileCardHTML(profileData, selectedStyle) {
 
             <footer class="footer">
                 <p>Powered by &copy; Total Connect ${new Date().getFullYear()}</p>
-                <p><a href="https://get.tccards.tn" target="_blank" style='color:springgreen'>Get Your Free Digital Profile</a></p>
             </footer>
         </div>
     </center>
@@ -469,42 +514,50 @@ function showError(message) {
   if (existingLoader) existingLoader.remove();
 }
 async function showShareOptions(link) {
-    try {
-        // Check if Web Share API is supported
-        if (navigator.share) {
-            await navigator.share({
-                title: 'Check out this profile',
-                text: 'View my digital business card',
-                url: link
-            });
-        } else {
-            // Fallback for browsers that don't support Web Share API
-            const shareHtml = `
+  try {
+    // Check if Web Share API is supported
+    if (navigator.share) {
+      await navigator.share({
+        title: "Check out this profile",
+        text: "View my digital business card",
+        url: link,
+      });
+    } else {
+      // Fallback for browsers that don't support Web Share API
+      const shareHtml = `
                 <div class="share-options">
                     <h3>Share this profile</h3>
                     <div class="share-links">
-                        <a href="https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(link)}" target="_blank" class="share-link facebook">Facebook</a>
-                        <a href="https://twitter.com/intent/tweet?url=${encodeURIComponent(link)}" target="_blank" class="share-link twitter">Twitter</a>
-                        <a href="https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(link)}" target="_blank" class="share-link linkedin">LinkedIn</a>
-                        <a href="https://api.whatsapp.com/send?text=${encodeURIComponent(link)}" target="_blank" class="share-link whatsapp">WhatsApp</a>
+                        <a href="https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(
+                          link
+                        )}" target="_blank" class="share-link facebook">Facebook</a>
+                        <a href="https://twitter.com/intent/tweet?url=${encodeURIComponent(
+                          link
+                        )}" target="_blank" class="share-link twitter">Twitter</a>
+                        <a href="https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(
+                          link
+                        )}" target="_blank" class="share-link linkedin">LinkedIn</a>
+                        <a href="https://api.whatsapp.com/send?text=${encodeURIComponent(
+                          link
+                        )}" target="_blank" class="share-link whatsapp">WhatsApp</a>
                     </div>
                 </div>
             `;
 
-            Swal.fire({
-                title: 'Share Profile',
-                html: shareHtml,
-                showCancelButton: true,
-                cancelButtonText: 'Close',
-                background: '#162949',
-                color: '#fff',
-                customClass: {
-                    confirmButton: 'swal-confirm-button',
-                    cancelButton: 'swal-cancel-button'
-                }
-            });
-        }
-    } catch (error) {
-        console.error('Error sharing:', error);
+      Swal.fire({
+        title: "Share Profile",
+        html: shareHtml,
+        showCancelButton: true,
+        cancelButtonText: "Close",
+        background: "#162949",
+        color: "#fff",
+        customClass: {
+          confirmButton: "swal-confirm-button",
+          cancelButton: "swal-cancel-button",
+        },
+      });
     }
+  } catch (error) {
+    console.error("Error sharing:", error);
+  }
 }

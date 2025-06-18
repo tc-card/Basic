@@ -4,10 +4,24 @@
   width: 100%;
 }
 
+
 /* Add this media query for larger screens */
 @media screen and (min-width: 1024px) {
   .card-container {
       max-width: 800px; /* Increased from 600px */
+  }
+  /* Top Right Share Button */
+  .top-right {
+      position: absolute;
+      top: 15px;
+      right: 200px;
+      background: rgba(255, 255, 255, 0.1);
+      padding: 8px;
+      padding-bottom: -2px;
+      color: white;
+      border-radius: 50%;
+      cursor: pointer;
+      transition: all 0.3s ease;
   }
 }
 

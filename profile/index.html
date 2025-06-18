@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
     <title>Profile | Total Connect NFC</title>
-    <meta name="description" content="Create, manage, and share digital business cards using NFC technology.">
+    <meta property="og:title" content="Total Connect NFC - Profile">
     <meta name="author" content="Total Connect NFC">
     <meta name="copyright" content="Total Connect NFC">
     <meta name="language" content="en-US">
@@ -19,14 +20,24 @@
     <link rel="canonical" href="https://tccards.tn/profile/">
     
     <!-- Open Graph -->
-    <meta property="og:title" content="Total Connect NFC - Profile">
-    <meta property="og:description" content="Create, manage, and share digital business cards using NFC technology.">
-    <meta property="og:image" content="https://www.gstatic.com/identity/boq/accountsettingsmobile/contacts_card_scene_316x112_30b26c263ec7d6c2839b403059092259.png">
-    <meta property="og:image:width" content="1200">
-    <meta property="og:image:height" content="630">
-    <meta property="og:url" content="https://tccards.tn/profile/">
-    <meta property="og:type" content="website">
+  <title>tccards | Loading Profile...</title>
+  <meta name="description" content="Digital business card profile">
+  <meta property="og:title" content="tccards Profile">
+  <meta property="og:description" content="View this digital business card">
+  <meta property="og:image" content="https://tccards.tn/Assets/152.png">
+  <meta property="og:url" content="https://card.tccards.tn">
+  <meta property="og:type" content="profile">
+  <meta name="twitter:card" content="summary_large_image">
     <meta property="og:site_name" content="Total Connect NFC">
+  
+  <!-- Bot detection (add before closing </head>) -->
+  <script>
+    if (window.location.hash && /bot|facebook|twitter/i.test(navigator.userAgent)) {
+      window.location.href = `https://card.tccards.tn/@${
+        window.location.hash.substring(1)
+      }`;
+    }
+  </script>
     
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image">
