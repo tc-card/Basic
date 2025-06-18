@@ -17,43 +17,6 @@ const CONFIG = {
   },
 };
 
-// ===== NEW META TAG SYSTEM =====
-function updateMetaTags(profile) {
-  const title = profile?.name
-    ? `${profile.name} | tccards`
-    : "Profile Not Found";
-  const description = profile?.bio || "Digital business card profile";
-  const image = profile?.profilePic || CONFIG.defaultProfilePic;
-  const url = `https://card.tccards.tn/@${window.location.hash.substring(1)}`;
-
-  // Update standard meta tags
-  document.title = title;
-  setMetaTag("description", description);
-  setMetaTag("og:title", title);
-  setMetaTag("og:description", description);
-  setMetaTag("og:image", image);
-  setMetaTag("og:url", url);
-  setMetaTag("twitter:card", "summary_large_image");
-
-  // Handle error cases
-  if (!profile || profile.error) {
-    setMetaTag("robots", "noindex");
-  }
-}
-
-function setMetaTag(name, content) {
-  let tag = document.querySelector(
-    `meta[name="${name}"], meta[property="${name}"]`
-  );
-  if (!tag) {
-    tag = document.createElement("meta");
-    name.startsWith("og:")
-      ? tag.setAttribute("property", name)
-      : tag.setAttribute("name", name);
-    document.head.appendChild(tag);
-  }
-  tag.setAttribute("content", content);
-}
 
 // ===== UPDATED INITIALIZATION =====
 document.addEventListener("DOMContentLoaded", function () {
@@ -132,6 +95,43 @@ async function fetchWithTimeout(resource, options = {}) {
   return response;
 }
 
+// ===== NEW META TAG SYSTEM =====
+function updateMetaTags(profile) {
+  const title = profile?.name
+    ? `${profile.name} | tccards`
+    : "Profile Not Found";
+  const description = profile?.bio || "Digital business card profile";
+  const image = profile?.profilePic || CONFIG.defaultProfilePic;
+  const url = `https://card.tccards.tn/@${window.location.hash.substring(1)}`;
+
+  // Update standard meta tags
+  document.title = title;
+  setMetaTag("description", description);
+  setMetaTag("og:title", title);
+  setMetaTag("og:description", description);
+  setMetaTag("og:image", image);
+  setMetaTag("og:url", url);
+  setMetaTag("twitter:card", "summary_large_image");
+
+  // Handle error cases
+  if (!profile || profile.error) {
+    setMetaTag("robots", "noindex");
+  }
+}
+
+function setMetaTag(name, content) {
+  let tag = document.querySelector(
+    `meta[name="${name}"], meta[property="${name}"]`
+  );
+  if (!tag) {
+    tag = document.createElement("meta");
+    name.startsWith("og:")
+      ? tag.setAttribute("property", name)
+      : tag.setAttribute("name", name);
+    document.head.appendChild(tag);
+  }
+  tag.setAttribute("content", content);
+}
 function handleProfileData(data) {
   try {
     const loader = document.querySelector(".loader");
