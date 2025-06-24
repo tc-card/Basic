@@ -222,9 +222,7 @@ function createProfileCardHTML(profileData, selectedStyle) {
   return `
     <center>
         <div class="profile-container">
-            <div class="top-right" onclick="showShareOptions('${escapeHtml(
-              profileData.link
-            )}')">
+            <div class="top-right" onclick="showShareOptions(window.location.href)">
                 <i class="fas fa-share-alt"></i>
             </div>
             
