@@ -1,6 +1,9 @@
+import { analyticsTracking } from './analytics.js';
+
 const CONFIG = {
   defaultBg: "url(https://tccards.tn/Assets/bg.png) center fixed",
   defaultProfilePic: "https://tccards.tn/Assets/default.png",
+  googleAnalyticsUrl: "https://script.google.com/macros/s/AKfycbw8tkRI9dHsspu07YS6agXF4wrT1X8tyt9_4D_TnbffQliyLdp1a71fPu197gw3tiWe/exec",
   databases: {
     id: "AKfycbzPv8Rr4jM6Fcyjm6uelUtqw2hHLCFWYhXJlt6nWTIKaqUL_9j_41rwzhFGMlkF2nrG",
     plan: "basic",
@@ -43,6 +46,13 @@ document.addEventListener("DOMContentLoaded", function () {
   const identifier = isIdLookup ? hash.split("_")[1] : hash;
 
   searchProfile(identifier, isIdLookup);
+    // Register visit only if not already recorded
+    let profileVisits = JSON.parse(localStorage.getItem("profileVisits") || "[]");
+    if (!profileVisits.includes(hash)) {
+        profileVisits.push(hash);
+        localStorage.setItem("profileVisits", JSON.stringify(profileVisits));
+    }
+  
 });
 
 // Fast profile lookup using single database, redirects to 404.html on error
@@ -147,9 +157,8 @@ function handleProfileData(data) {
     if (data.status === "error") {
       throw new Error(data?.message || "Profile data could not be loaded");
     }
-
-    if (!data.Name) {
-      throw new Error("Invalid profile data: Name is required");
+    if (data.status === "active") {
+      analyticsTracking(data.Link, data.Email, data.status);
     }
 
     updateMetaTags(data);
@@ -160,46 +169,53 @@ function handleProfileData(data) {
   }
 }
 
-function renderProfileCard(data) {
-  const container = document.querySelector(".card-container");
-  container.style.display = "block";
+function createProfileCardHTML(profileData, selectedStyle) {
+    const style = selectedStyle
+        ? CONFIG.styles[selectedStyle]?.background
+        : CONFIG.defaultBg;
 
-  if (data?.status && data.status === "Inactive") {
-    showError(
-      "Your profile is not active. Please contact support to activate your profile."
-    );
-    container.innerHTML = `
-    <div class="profile-container">
-        <div class="inactive-profile">
-            <h2>Profile Inactive</h2>
-            <p>If you are having any issues please <a href="mailto:info@tccards.tn">contact us</a></p>
-        </div>
-    </div>`;
-    return;
-  }
+    return `
+        <center>
+            <div class="profile-container">
+                <div class="top-right" id="share-button" onclick="showShareOptions(window.location.href)">
+                    <i class="fas fa-share-alt"></i>
+                </div>
+                
+                <img src="${escapeHtml(profileData.profilePic)}" 
+                 class="profile-picture js-profile-image" 
+                 alt="${escapeHtml(profileData.name)}'s profile"
+                 data-fallback="${escapeHtml(CONFIG.defaultProfilePic)}">
+                
+                <h2>${escapeHtml(profileData.name)}</h2>
+                ${
+                  profileData.tagline
+                    ? `<p>${escapeHtml(profileData.tagline)}</p>`
+                    : ""
+                }
+                
+                ${renderSocialLinks(profileData.socialLinks)}
 
-  // Prepare profile data with defaults
-  const profileData = {
-    name: data.Name || "User",
-    link: data.Link || "tccards",
-    tagline: data.Tagline || "",
-    profilePic: data["Profile Picture URL"] || CONFIG.defaultProfilePic,
-    form: data["Form"] || "", // form email
-    socialLinks: data["Social Links"] || "",
-    email: data.Email || "",
-    phone: data.Phone || "",
-    address: data.Address || "",
-    status: data.status,
-  };
+                ${
+                  profileData.email || profileData.phone || profileData.address
+                    ? `<button id="contact-button" class="contact-btn" onclick="showContactDetails(${escapeHtml(
+                        JSON.stringify({
+                          name: profileData.name,
+                          profilePic: profileData.profilePic,
+                          email: profileData.email,
+                          phone: profileData.phone,
+                          address: profileData.address,
+                          style: style,
+                        })
+                      )})">Get in Touch</button>`
+                    : ""
+                }
 
-  // Apply background style if available
-  applyBackgroundStyle(data["Selected Style"]);
-
-  // Render the profile card
-  container.innerHTML = createProfileCardHTML(
-    profileData,
-    data["Selected Style"]
-  );
+                <footer class="footer">
+                    <p>Powered by &copy; Total Connect ${new Date().getFullYear()}</p>
+                </footer>
+            </div>
+        </center>
+    `;
 }
 
 function applyBackgroundStyle(selectedStyle) {
@@ -343,20 +359,20 @@ function renderSocialLinks(links) {
 
   if (!validLinks.length) return "";
 
-  return `
+    return `
         <div class="social-links">
             ${validLinks
-              .map(
-                (link) => `
-                <a href="${escapeHtml(
-                  link.href
-                )}" target="_blank" rel="noopener noreferrer" class="flex items-center gap-3 p-3 hover:bg-gray-700 rounded-lg transition-colors">
-                    <i class="${link.icon} text-lg"></i>
-                    <span>${escapeHtml(link.display)}</span>
-                </a>
-            `
-              )
-              .join("")}
+                .map(
+                    (link) => `
+                    <a href="${escapeHtml(
+                        link.href
+                    )}" target="_blank" rel="noopener noreferrer" class="social-link flex items-center gap-3 p-3 hover:bg-gray-700 rounded-lg transition-colors">
+                        <i class="${link.icon} text-lg"></i>
+                        <span>${escapeHtml(link.display)}</span>
+                    </a>
+                `
+                )
+                .join("")}
         </div>
     `;
 }
@@ -468,6 +484,12 @@ async function copyContactDetails(contact) {
       .join("\n");
 
     await navigator.clipboard.writeText(contactText);
+    
+    // Track successful copy
+    if (window.trackCopyAction) {
+      window.trackCopyAction(true);
+    }
+    
     await Swal.fire({
       icon: "success",
       title: "Copied!",
@@ -479,9 +501,10 @@ async function copyContactDetails(contact) {
       background: "#1a1a1a",
       color: "#fff",
     });
+    return true;
   } catch (error) {
     console.error("Copy failed:", error);
-    throw new Error("Failed to copy contact details");
+    return false;
   }
 }
 
