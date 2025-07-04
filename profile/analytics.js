@@ -77,7 +77,7 @@ const AnalyticsManager = {
       });
     });
     
-    // Monitor for copy actions (will be called from copyContactDetails)
+    // Monitor for copy actions
     window.trackCopyAction = (success) => {
       if (success) {
         this.state.copyCount++;
@@ -89,11 +89,11 @@ const AnalyticsManager = {
   
   // Track profile visit
   trackVisit: function() {
-    const visitedProfiles = JSON.parse(localStorage.getItem("visitedProfiles")) || [];
-    if (!visitedProfiles.includes(this.link)) {
-      visitedProfiles.push(this.link);
-      localStorage.setItem("visitedProfiles", JSON.stringify(visitedProfiles));
-      this.state.totalVisits = 1;
+    const now = Date.now();
+    // Only count a visit if it's been more than 30 minutes since last visit
+    if (now - this.state.lastUpdated > 30 * 60 * 1000) {
+      this.state.totalVisits++;
+      this.state.lastUpdated = now;
       this.saveState();
       this.submitUpdate('visit');
     }
@@ -101,37 +101,35 @@ const AnalyticsManager = {
   
   // Submit updates to server
   submitUpdate: async function(actionType, actionDetail = null) {
-    // Prepare update data
+    // Prepare update data in the format backend expects
     const updateData = {
       action: actionType,
       detail: actionDetail,
-      timestamp: Date.now(),
-      fullState: this.state
+      fullState: {
+        ...this.state,
+        link: this.link,
+        email: this.email
+      }
     };
     
-    // Use Beacon API if available for reliability
-    if (navigator.sendBeacon) {
-      const blob = new Blob([JSON.stringify(updateData)], {type: 'application/json'});
-      navigator.sendBeacon(`${CONFIG.googleAnalyticsUrl}/update`, blob);
-    } else {
-      // Fallback to fetch with low priority
-      try {
-        await fetch(`${CONFIG.googleAnalyticsUrl}/update`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(updateData),
-          keepalive: true // Ensure request completes even if page closes
-        });
-      } catch (error) {
-        console.error('Analytics update failed:', error);
-        // Queue for retry later
-        this.queueRetry(updateData);
+    try {
+      const response = await fetch(CONFIG.googleAnalyticsUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(updateData)
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
+      
+      console.log(`Analytics update successful: ${actionType}`);
+    } catch (error) {
+      console.error('Analytics update failed:', error);
+      this.queueRetry(updateData);
     }
-    
-    console.log(`Analytics update: ${actionType}`, updateData);
   },
   
   // Queue failed updates for retry
@@ -140,7 +138,7 @@ const AnalyticsManager = {
     retryQueue.push(updateData);
     localStorage.setItem("analyticsRetryQueue", JSON.stringify(retryQueue));
     
-    // Setup periodic retry
+    // Setup periodic retry if not already running
     if (!this.retryInterval) {
       this.retryInterval = setInterval(() => {
         this.processRetryQueue();
@@ -157,26 +155,28 @@ const AnalyticsManager = {
       return;
     }
     
-    const successItems = [];
+    const successfulItems = [];
     
     for (const item of retryQueue) {
       try {
-        await fetch(`${CONFIG.googleAnalyticsUrl}/update`, {
+        const response = await fetch(CONFIG.googleAnalyticsUrl, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify(item),
-          keepalive: true
+          body: JSON.stringify(item)
         });
-        successItems.push(item);
+        
+        if (response.ok) {
+          successfulItems.push(item);
+        }
       } catch (error) {
         console.error('Retry failed for:', item, error);
       }
     }
     
-    // Update queue
-    const newQueue = retryQueue.filter(item => !successItems.includes(item));
+    // Update queue by removing successful items
+    const newQueue = retryQueue.filter(item => !successfulItems.includes(item));
     localStorage.setItem("analyticsRetryQueue", JSON.stringify(newQueue));
   }
 };
@@ -188,7 +188,7 @@ export function analyticsTracking(link, email, status) {
   // Initialize the tracking manager
   AnalyticsManager.init(link, email);
   
-  // Also submit a full state update on initialization
+  // Submit initial state
   AnalyticsManager.submitUpdate('init');
   
   console.log("Analytics tracking initialized for:", link);
