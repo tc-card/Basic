@@ -1,4 +1,7 @@
-// Analytics tracking state manager
+const CONFIG = {
+  googleAnalyticsUrl: "https://script.google.com/macros/s/AKfycbw8tkRI9dHsspu07YS6agXF4wrT1X8tyt9_4D_TnbffQliyLdp1a71fPu197gw3tiWe/exec",
+};
+
 const AnalyticsManager = {
   // Initialize tracking state
   init: function(link, email) {
