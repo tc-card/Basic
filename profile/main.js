@@ -106,11 +106,11 @@ async function fetchWithTimeout(resource, options = {}) {
 
 // ===== NEW META TAG SYSTEM =====
 function updateMetaTags(profile) {
-  const title = profile?.name
-    ? `${profile.name} | tccards`
+  const title = profileData.name
+    ? `${profileData.name} | tccards`
     : "Profile Not Found";
-  const description = profile?.bio || "Digital business card profile";
-  const image = profile?.profilePic || CONFIG.defaultProfilePic;
+  const description = profileData.bio || "Digital business card profile";
+  const image = profileData.profilePic || CONFIG.defaultProfilePic;
   const url = `https://card.tccards.tn/@${window.location.hash.substring(1)}`;
 
   // Update standard meta tags
@@ -123,7 +123,7 @@ function updateMetaTags(profile) {
   setMetaTag("twitter:card", "summary_large_image");
 
   // Handle error cases
-  if (!profile || profile.error) {
+  if (!profile || profileData.error) {
     setMetaTag("robots", "noindex");
   }
 }
@@ -156,12 +156,14 @@ function handleProfileData(data) {
     if (data.status === "error") {
       throw new Error(data?.message || "Profile data could not be loaded");
     }
-    if (data.status === "active") {
-      analyticsTracking(data.Link, data.Email, data.status);
-    }
 
     updateMetaTags(data);
     renderProfileCard(data);
+
+    // Call analyticsTracking AFTER rendering
+    if (data.status === "active") {
+      analyticsTracking(data.Link, data.Email, data.status);
+    }
   } catch (error) {
     console.error("Profile handling error:", error);
     showError(error.message);

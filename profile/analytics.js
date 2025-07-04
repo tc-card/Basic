@@ -62,7 +62,7 @@ const AnalyticsManager = {
     }
     
     // Social links
-    const socialLinks = document.querySelectorAll(".social-link a");
+    const socialLinks = document.querySelectorAll(".social-link");
     socialLinks.forEach(link => {
       if (!link.id) {
         link.id = `social-link-${[...socialLinks].indexOf(link) + 1}`;
