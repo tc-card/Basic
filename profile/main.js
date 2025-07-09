@@ -17,7 +17,6 @@ const CONFIG = {
   },
 };
 
-
 // ===== UPDATED INITIALIZATION =====
 document.addEventListener("DOMContentLoaded", function () {
   // Existing hash handling (unchanged)
