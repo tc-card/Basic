@@ -17,15 +17,25 @@ const CONFIG = {
   },
 };
 
-// ===== UPDATED INITIALIZATION =====
+// ===== INITIALIZATION =====
 document.addEventListener("DOMContentLoaded", function () {
-  // Existing hash handling (unchanged)
-  const hash = window.location.hash.substring(1);
-  if (!hash) {
-    updateMetaTags({ error: true });
-    showError("No profile link provided");
+// Check if hash exists
+const hash = window.location.hash.substring(1);
+
+if (!hash) {
+  const currentURL = window.location.href;
+  const baseProfileURL = "https://card.tccards.tn/profile/";
+
+  // If current URL matches base profile URL exactly, redirect
+  if (currentURL === baseProfileURL) {
+    window.location.href = "https://card.tccards.tn/list/"; // Redirect to list page
     return;
   }
+
+  updateMetaTags({ error: true });
+  showError("No profile link provided");
+  return;
+}
 
   // Enhanced URL handling
   const newUrl = `https://card.tccards.tn/@${hash}`;
