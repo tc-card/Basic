@@ -18,30 +18,22 @@ const CONFIG = {
 };
 
 // ===== INITIALIZATION =====
-document.addEventListener("DOMContentLoaded", function () {
-// Check if hash exists
-const hash = window.location.hash.substring(1);
-  document.body.style.background = CONFIG.defaultBg;
+document.addEventListener("DOMContentLoaded", function() {
+  // Set initial background
+  document.body.style.background = "url(https://tccards.tn/Assets/background.png) center fixed";
   document.body.style.backgroundSize = "cover";
   document.body.style.backdropFilter = "blur(5px)";
-if (!hash) {
-  const currentURL = window.location.href;
-  const baseProfileURL = "https://card.tccards.tn/profile/";
 
-  updateMetaTags({ error: true });
-  showError("No profile link provided");
-  return;
-}
+  // Extract identifier from URL hash
+  const hash = window.location.hash.substring(1);
+  if (!hash) {
+    showError("No profile link provided");
+    return;
+  }
 
-  // Enhanced URL handling
-  const newUrl = `https://card.tccards.tn/@${hash}`;
+  // Update URL without reload
+  const newUrl = `https://at.tccards.tn/@${hash}`;
   window.history.replaceState(null, null, newUrl);
-
-  // Initialize with loading meta
-  updateMetaTags({
-    name: "Loading...",
-    bio: "Profile is loading",
-  });
 
   // Determine lookup type and start search
   const isIdLookup = hash.startsWith("id_");
@@ -50,6 +42,7 @@ if (!hash) {
   searchProfile(identifier, isIdLookup);
 });
 
+// Fast profile lookup using single database, redirects to 404.html on error
 async function searchProfile(identifier, isIdLookup) {
   try {
     const param = isIdLookup ? "id" : "link";
@@ -70,6 +63,11 @@ async function searchProfile(identifier, isIdLookup) {
 
     if (data && typeof data === "object") {
       handleProfileData(data);
+      updateMetaTags({
+        name: data.Name,
+        bio: data.Tagline,
+        profilePic: data["Profile Picture URL"],
+      });
     } else {
       showError("Invalid profile data");
     }
@@ -79,6 +77,51 @@ async function searchProfile(identifier, isIdLookup) {
   }
 }
 
+// Helper function with timeout
+async function fetchWithTimeout(resource, options = {}) {
+  const { timeout = 8000 } = options;
+
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), timeout);
+
+  const response = await fetch(resource, {
+    ...options,
+    signal: controller.signal,
+  });
+  clearTimeout(id);
+
+  return response;
+}
+function handleProfileData(data, plan) {
+    const loader = document.querySelector('.loader');
+    if (loader) {
+        loader.style.transition = 'opacity 0.5s ease';
+        loader.style.opacity = '0';
+        setTimeout(() => {
+            loader.style.display = 'none';
+        }, 500);
+    }   
+    // Normalize data structure
+    data = data.data || data;
+
+    if (!data || typeof data !== "object") {
+      throw new Error("Invalid profile data received");
+    }
+
+    if (data.status === "error") {
+      throw new Error(data?.message || "Profile data could not be loaded");
+    }
+
+    if (!data.Name) {
+      throw new Error("Invalid profile data: Name is required");
+    }
+    renderProfileCard(data);
+    updateMetaTags({
+      name: data.Name,
+      bio: data.Tagline,
+      profilePic: data["Profile Picture URL"],
+    });
+}
 // ===== NEW META TAG SYSTEM =====
 function updateMetaTags(profile) {
   const title = profile?.name
@@ -116,34 +159,6 @@ function setMetaTag(name, content) {
   }
   tag.setAttribute("content", content);
 }
-function handleProfileData(data) {
-  try {
-    const loader = document.querySelector(".loader");
-    if (loader) loader.style.display = "none";
-
-    // Normalize data structure
-    data = data.data || data;
-
-    if (!data || typeof data !== "object") {
-      throw new Error("Invalid profile data received");
-    }
-
-    if (data.status === "error") {
-      throw new Error(data?.message || "Profile data could not be loaded");
-    }
-
-    if (!data.Name) {
-      throw new Error("Invalid profile data: Name is required");
-    }
-
-    updateMetaTags(data);
-    renderProfileCard(data);
-  } catch (error) {
-    console.error("Profile handling error:", error);
-    showError(error.message);
-  }
-}
-
 function renderProfileCard(data) {
   const container = document.querySelector(".card-container");
   container.style.display = "block";
