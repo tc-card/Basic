@@ -1,5 +1,5 @@
 const CONFIG = {
-  defaultBg: "url(https://tccards.tn/Assets/bg.png) center fixed",
+  defaultBg: "url(https://tccards.tn/Assets/background.png) center fixed",
   defaultProfilePic: "https://tccards.tn/Assets/default.png",
   databases: {
     id: "AKfycbzPv8Rr4jM6Fcyjm6uelUtqw2hHLCFWYhXJlt6nWTIKaqUL_9j_41rwzhFGMlkF2nrG",
@@ -21,16 +21,12 @@ const CONFIG = {
 document.addEventListener("DOMContentLoaded", function () {
 // Check if hash exists
 const hash = window.location.hash.substring(1);
-
+  document.body.style.background = CONFIG.defaultBg;
+  document.body.style.backgroundSize = "cover";
+  document.body.style.backdropFilter = "blur(5px)";
 if (!hash) {
   const currentURL = window.location.href;
   const baseProfileURL = "https://card.tccards.tn/profile/";
-
-  // If current URL matches base profile URL exactly, redirect
-  if (currentURL === baseProfileURL) {
-    window.location.href = "https://card.tccards.tn/list/"; // Redirect to list page
-    return;
-  }
 
   updateMetaTags({ error: true });
   showError("No profile link provided");
@@ -54,16 +50,13 @@ if (!hash) {
   searchProfile(identifier, isIdLookup);
 });
 
-// Fast profile lookup using single database, redirects to 404.html on error
 async function searchProfile(identifier, isIdLookup) {
   try {
     const param = isIdLookup ? "id" : "link";
-    const url = `https://script.google.com/macros/s/${
-      CONFIG.databases.id
-    }/exec?${param}=${encodeURIComponent(identifier)}`;
+    const url = `https://script.google.com/macros/s/${CONFIG.databases.id}/exec?${param}=${encodeURIComponent(identifier)}`;
 
     const response = await fetchWithTimeout(url, {
-      timeout: 5000,
+      timeout: 5000
     });
 
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
@@ -77,50 +70,22 @@ async function searchProfile(identifier, isIdLookup) {
 
     if (data && typeof data === "object") {
       handleProfileData(data);
-      updateMetaTags(data);
     } else {
       showError("Invalid profile data");
     }
   } catch (error) {
-    updateMetaTags({ error: true });
     console.error("Profile search error:", error);
     showError("Failed to load profile");
   }
 }
 
-// Helper function with timeout
-async function fetchWithTimeout(resource, options = {}) {
-  const { timeout = 8000 } = options;
-
-  const controller = new AbortController();
-  const id = setTimeout(() => controller.abort(), timeout);
-
-  const response = await fetch(resource, {
-    ...options,
-    signal: controller.signal,
-  });
-  clearTimeout(id);
-
-  return response;
-}
-
 // ===== NEW META TAG SYSTEM =====
 function updateMetaTags(profile) {
-  // Use both Name/profilePic if present, fallback to previous logic
-  const title = profile?.Name
-    ? `${profile.Name} | tccards`
-    : profile?.name
-      ? `${profile.name} | tccards`
-      : "Profile Not Found";
-  const description =
-    profile?.Tagline ||
-    profile?.tagline ||
-    profile?.bio ||
-    "Digital business card profile";
-  const image =
-    profile?.["Profile Picture URL"] ||
-    profile?.profilePic ||
-    CONFIG.defaultProfilePic;
+  const title = profile?.name
+    ? `${profile.name} | tccards`
+    : "Profile Not Found";
+  const description = profile?.bio || "Digital business card profile";
+  const image = profile?.profilePic || CONFIG.defaultProfilePic;
   const url = `https://card.tccards.tn/@${window.location.hash.substring(1)}`;
 
   // Update standard meta tags
@@ -179,62 +144,37 @@ function handleProfileData(data) {
   }
 }
 
-// ===== PROFILE DATA HANDLER (UPDATED) =====
-function handleProfileData(data, plan) {
-    const loader = document.querySelector('.loader');
-    if (loader) {
-        loader.style.transition = 'opacity 0.5s ease';
-        loader.style.opacity = '0';
-        setTimeout(() => {
-            loader.style.display = 'none';
-        }, 500);
-    }   
-    // Open the data array received data.data to access the profile data
-    data = data.data || data;
-    plan = plan || 'free';
-    // Check if data is valid
-    if (!data || typeof data !== 'object') {
-        showError("Invalid profile data received");
-        return;
-    }
+function renderProfileCard(data) {
+  const container = document.querySelector(".card-container");
+  container.style.display = "block";
 
-    if (data.status === "error") {
-        showError(data?.message || "Profile data could not be loaded");
-        return;
-    }
-    
-    if (!data.Name) {
-        showError("Invalid profile data: Name is required");
-        return;
-    }
-    
-    if (data?.Status && data.Status !== "Active") {
-        showError("This profile is currently inactive");
-        return;
-    }
-    // Check if profile is older than 30 days
-    const now = Date.now();
-    if (now - data.timestamp >= 30 * 24 * 60 * 60 * 1000) {
-        showError("This profile has expired. Please contact support to renew.");
-        return;
-    }
+  if (data?.status && data.status === "Inactive") {
+    showError(
+      "Your profile is not active. Please contact support to activate your profile."
+    );
+    container.innerHTML = `
+    <div class="profile-container">
+        <div class="inactive-profile">
+            <h2>Profile Inactive</h2>
+            <p>If you are having any issues please <a href="mailto:info@tccards.tn">contact us</a></p>
+        </div>
+    </div>`;
+    return;
+  }
 
-    try {
-        // Apply plan-specific features
-        const container = document.querySelector(".card-container");
-        container.style.display = 'block';
-        
-        // Safe data access with fallbacks
-        const profileData = {
-            name: data.Name || 'User',
-            link: data.Link || 'tccards',
-            tagline: data.Tagline || '',
-            profilePic: data['Profile Picture URL'] || 'https://tccards.tn/Assets/default.png',
-            socialLinks: data['Social Links'] || '',
-            email: data.Email || '',
-            phone: data.Phone || '',
-            address: data.Address || ''
-        };
+  // Prepare profile data with defaults
+  const profileData = {
+    name: data.Name || "User",
+    link: data.Link || "tccards",
+    tagline: data.Tagline || "",
+    profilePic: data["Profile Picture URL"] || CONFIG.defaultProfilePic,
+    form: data["Form"] || "", // form email
+    socialLinks: data["Social Links"] || "",
+    email: data.Email || "",
+    phone: data.Phone || "",
+    address: data.Address || "",
+    status: data.status,
+  };
 
   // Apply background style if available
   applyBackgroundStyle(data["Selected Style"]);
