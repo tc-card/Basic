@@ -16,12 +16,10 @@ const CONFIG = {
     },
   },
 };
-
-// ===== INITIALIZATION =====
 document.addEventListener("DOMContentLoaded", function() {
-  // Set initial background
-  document.body.style.background = "url(https://tccards.tn/Assets/background.png) center fixed";
-  document.body.style.backgroundSize = "cover";
+    // Set initial background
+    document.body.style.background = "url(https://tccards.tn/Assets/bg.png) center fixed";
+    document.body.style.backgroundSize = "cover";
   document.body.style.backdropFilter = "blur(5px)";
 
   // Extract identifier from URL hash
@@ -63,11 +61,6 @@ async function searchProfile(identifier, isIdLookup) {
 
     if (data && typeof data === "object") {
       handleProfileData(data);
-      updateMetaTags({
-        name: data.Name,
-        bio: data.Tagline,
-        profilePic: data["Profile Picture URL"],
-      });
     } else {
       showError("Invalid profile data");
     }
@@ -101,124 +94,96 @@ function handleProfileData(data, plan) {
             loader.style.display = 'none';
         }, 500);
     }   
-    // Normalize data structure
+    // Open the data array received data.data to access the profile data
     data = data.data || data;
-
-    if (!data || typeof data !== "object") {
-      throw new Error("Invalid profile data received");
+    plan = plan || 'free';
+    // Check if data is valid
+    if (!data || typeof data !== 'object') {
+        showError("Invalid profile data received");
+        return;
     }
 
     if (data.status === "error") {
-      throw new Error(data?.message || "Profile data could not be loaded");
+        showError(data?.message || "Profile data could not be loaded");
+        return;
     }
-
+    
     if (!data.Name) {
-      throw new Error("Invalid profile data: Name is required");
+        showError("Invalid profile data: Name is required");
+        return;
     }
-    renderProfileCard(data);
-    updateMetaTags({
-      name: data.Name,
-      bio: data.Tagline,
-      profilePic: data["Profile Picture URL"],
-    });
-}
-// ===== NEW META TAG SYSTEM =====
-function updateMetaTags(profile) {
-  const title = profile?.name
-    ? `${profile.name} | tccards`
-    : "Profile Not Found";
-  const description = profile?.bio || "Digital business card profile";
-  const image = profile?.profilePic || CONFIG.defaultProfilePic;
-  const url = `https://card.tccards.tn/@${window.location.hash.substring(1)}`;
+    
+    if (data?.Status && data.Status !== "Active") {
+        showError("This profile is currently inactive");
+        return;
+    }
+    // Check if profile is older than 30 days
+    const now = Date.now();
+    if (now - data.timestamp >= 30 * 24 * 60 * 60 * 1000) {
+        showError("This profile has expired. Please contact support to renew.");
+        return;
+    }
 
-  // Update standard meta tags
-  document.title = title;
-  setMetaTag("description", description);
-  setMetaTag("og:title", title);
-  setMetaTag("og:description", description);
-  setMetaTag("og:image", image);
-  setMetaTag("og:url", url);
-  setMetaTag("twitter:card", "summary_large_image");
+    try {
+        // Apply plan-specific features
+        const container = document.querySelector(".card-container");
+        container.style.display = 'block';
+        
+        // Safe data access with fallbacks
+        const profileData = {
+            name: data.Name || 'User',
+            link: data.Link || 'tccards',
+            tagline: data.Tagline || '',
+            profilePic: data['Profile Picture URL'] || 'https://tccards.tn/Assets/default.png',
+            socialLinks: data['Social Links'] || '',
+            email: data.Email || '',
+            phone: data.Phone || '',
+            address: data.Address || ''
+        };
 
-  // Handle error cases
-  if (!profile || profile.error) {
-    setMetaTag("robots", "noindex");
-  }
-}
+        // Apply background style if available
+        if (data['Selected Style']) {
+            const selectedStyle = data['Selected Style'];
+            
+            if (selectedStyle.startsWith('linear-gradient')) {
+            document.body.style.background = `${selectedStyle}`;
+            } else {
+            const styles = {
+              
+                // Professional Gradients
+                corporateGradient: { background: 'linear-gradient(145deg, rgb(9, 9, 11), rgb(24, 24, 27), rgb(9, 9, 11))' },
+                oceanGradient: { background: 'linear-gradient(145deg, rgb(2, 6, 23), rgb(15, 23, 42), rgb(2, 6, 23))' },
+                default: "url(https://www.tccards.tn//Assets/background.png) center fixed"
+            };
 
-function setMetaTag(name, content) {
-  let tag = document.querySelector(
-    `meta[name="${name}"], meta[property="${name}"]`
-  );
-  if (!tag) {
-    tag = document.createElement("meta");
-    name.startsWith("og:")
-      ? tag.setAttribute("property", name)
-      : tag.setAttribute("name", name);
-    document.head.appendChild(tag);
-  }
-  tag.setAttribute("content", content);
-}
-function renderProfileCard(data) {
-  const container = document.querySelector(".card-container");
-  container.style.display = "block";
-
-  if (data?.status && data.status === "Inactive") {
-    showError(
-      "Your profile is not active. Please contact support to activate your profile."
-    );
-    container.innerHTML = `
-    <div class="profile-container">
-        <div class="inactive-profile">
-            <h2>Profile Inactive</h2>
-            <p>If you are having any issues please <a href="mailto:info@tccards.tn">contact us</a></p>
-        </div>
-    </div>`;
-    return;
-  }
-
-  // Prepare profile data with defaults
-  const profileData = {
-    name: data.Name || "User",
-    link: data.Link || "tccards",
-    tagline: data.Tagline || "",
-    profilePic: data["Profile Picture URL"] || CONFIG.defaultProfilePic,
-    form: data["Form"] || "", // form email
-    socialLinks: data["Social Links"] || "",
-    email: data.Email || "",
-    phone: data.Phone || "",
-    address: data.Address || "",
-    status: data.status,
-  };
-
-  // Apply background style if available
-  applyBackgroundStyle(data["Selected Style"]);
-
-  // Render the profile card
-  container.innerHTML = createProfileCardHTML(
-    profileData,
-    data["Selected Style"]
-  );
-}
-
-function applyBackgroundStyle(selectedStyle) {
-  if (!selectedStyle) return;
-
-  if (selectedStyle.startsWith("linear-gradient")) {
-    document.body.style.background = selectedStyle;
-  } else {
-    document.body.style.background =
-      CONFIG.styles[selectedStyle]?.background || CONFIG.defaultBg;
-  }
-  document.body.style.backgroundSize = "cover";
-}
-
-function createProfileCardHTML(profileData, selectedStyle) {
-  const style = selectedStyle
-    ? CONFIG.styles[selectedStyle]?.background
-    : CONFIG.defaultBg;
-
-  return `
+            document.body.style.background = styles[data['Selected Style']]?.background || styles.default;
+            document.body.style.backgroundSize = "cover";
+            }
+        }
+        const styles = {
+            corporateGradient: "linear-gradient(145deg, rgb(9, 9, 11), rgb(24, 24, 27), rgb(9, 9, 11))",
+            oceanGradient: "linear-gradient(145deg, rgb(2, 6, 23), rgb(15, 23, 42), rgb(2, 6, 23))",
+            minimal: { background: '#18181b' },
+            black: { background: '#09090b' },
+            navy: { background: '#020617' },
+            forest: { background: '#022c22' },
+            wine: { background: '#450a0a' },
+          
+            // Lighter color themes
+            clouds: { background: '#0ea5e9' },
+            Pink: { background: '#9b0055' },
+            SkyBlue: { background: '#2563eb' },
+            paleRed: { background: '#f00f4d' },
+          
+            // Professional Gradients
+            corporateGradient: { background: 'linear-gradient(145deg, rgb(9, 9, 11), rgb(24, 24, 27), rgb(9, 9, 11))' },
+            oceanGradient: { background: 'linear-gradient(145deg, rgb(2, 6, 23), rgb(15, 23, 42), rgb(2, 6, 23))' },
+            forestGradient: { background: 'linear-gradient(145deg, rgb(2, 44, 34), rgb(6, 78, 59), rgb(2, 44, 34))' },
+            burgundyGradient: { background: 'linear-gradient(145deg, rgb(69, 10, 10), rgb(127, 29, 29), rgb(69, 10, 10))' },
+            default: "url(https://tccards.tn/Assets/bg.png) cover center fixed"
+        };
+        // Render the profile card
+        container.innerHTML = `
             <div class="w-full container max-w-md p-6 md:p-24 rounded-xl shadow-lg mx-auto" style="background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px);">
                 <div class="flex justify-end mb-0 top-right" onclick="showShareOptions('${escapeHtml(profileData.link)}')">
                     <div class="w-8 h-8 bg-gray-800 rounded-full flex items-center justify-center">
@@ -254,6 +219,19 @@ function createProfileCardHTML(profileData, selectedStyle) {
                 </div>
             </div>
     `;
+    
+        // Show simple success notification
+        try {
+            if (typeof Swal !== 'undefined' && profileData) {
+                console.log('Profile found and loaded')
+            }
+        } catch (error) {
+            console.error('Error showing welcome message:', error);
+        }
+    } catch (error) {
+        console.error("Profile rendering error:", error);
+        showError("Error displaying profile");
+    }
 }
 function renderSocialLinks(links) {
   if (!links || typeof links !== "string") return "";
