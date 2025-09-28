@@ -1,5 +1,5 @@
 const CONFIG = {
-  defaultBg: "url(https://tccards.tn/Assets/bg.png) center fixed",
+  defaultBg: "url(https://www.tccards.tn//Assets/background.png) center cover fixed",
   defaultProfilePic: "https://tccards.tn/Assets/default.png",
   databases: {
     id: "AKfycbzPv8Rr4jM6Fcyjm6uelUtqw2hHLCFWYhXJlt6nWTIKaqUL_9j_41rwzhFGMlkF2nrG",
