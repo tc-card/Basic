@@ -21,9 +21,7 @@ const CONFIG = {
 document.addEventListener("DOMContentLoaded", function () {
 // Check if hash exists
 const hash = window.location.hash.substring(1);
-document.body.style.background = CONFIG.defaultBg;
-document.body.style.backgroundSize = "cover";
-document.body.style.backdropFilter = "blur(5px)";
+
 if (!hash) {
   const currentURL = window.location.href;
   const baseProfileURL = "https://card.tccards.tn/profile/";
@@ -56,13 +54,16 @@ if (!hash) {
   searchProfile(identifier, isIdLookup);
 });
 
+// Fast profile lookup using single database, redirects to 404.html on error
 async function searchProfile(identifier, isIdLookup) {
   try {
     const param = isIdLookup ? "id" : "link";
-    const url = `https://script.google.com/macros/s/${CONFIG.databases.id}/exec?${param}=${encodeURIComponent(identifier)}`;
+    const url = `https://script.google.com/macros/s/${
+      CONFIG.databases.id
+    }/exec?${param}=${encodeURIComponent(identifier)}`;
 
     const response = await fetchWithTimeout(url, {
-      timeout: 5000
+      timeout: 5000,
     });
 
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
@@ -76,14 +77,17 @@ async function searchProfile(identifier, isIdLookup) {
 
     if (data && typeof data === "object") {
       handleProfileData(data);
+      updateMetaTags(data);
     } else {
       showError("Invalid profile data");
     }
   } catch (error) {
+    updateMetaTags({ error: true });
     console.error("Profile search error:", error);
     showError("Failed to load profile");
   }
 }
+
 // ===== NEW META TAG SYSTEM =====
 function updateMetaTags(profile) {
   // Use both Name/profilePic if present, fallback to previous logic
