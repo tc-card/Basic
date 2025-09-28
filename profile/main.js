@@ -84,14 +84,23 @@ async function searchProfile(identifier, isIdLookup) {
     showError("Failed to load profile");
   }
 }
-
 // ===== NEW META TAG SYSTEM =====
 function updateMetaTags(profile) {
-  const title = profile?.name
-    ? `${profile.name} | tccards`
-    : "Profile Not Found";
-  const description = profile?.bio || "Digital business card profile";
-  const image = profile?.profilePic || CONFIG.defaultProfilePic;
+  // Use both Name/profilePic if present, fallback to previous logic
+  const title = profile?.Name
+    ? `${profile.Name} | tccards`
+    : profile?.name
+      ? `${profile.name} | tccards`
+      : "Profile Not Found";
+  const description =
+    profile?.Tagline ||
+    profile?.tagline ||
+    profile?.bio ||
+    "Digital business card profile";
+  const image =
+    profile?.["Profile Picture URL"] ||
+    profile?.profilePic ||
+    CONFIG.defaultProfilePic;
   const url = `https://card.tccards.tn/@${window.location.hash.substring(1)}`;
 
   // Update standard meta tags
