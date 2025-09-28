@@ -78,8 +78,6 @@
     <!-- Stylesheets -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link href="https://cdn.tailwindcss.com" rel="stylesheet">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdn.tailwindcss.com">
     <link rel="stylesheet" href="style.css">
     <!-- Favicon -->
     <link rel="icon" href="https://tccards.tn/Assets/150.png" type="image/x-icon">
@@ -94,6 +92,31 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
     <link rel="stylesheet" href="style.css">
+    
+    <style>
+        /* Custom loader animation */
+        .loader {
+            width: 60px;
+            height: 60px;
+            border: 4px solid rgba(255,255,255,0.1);
+            border-radius: 50%;
+            border-top-color: #6366f1;
+            animation: spin 1s ease-in-out infinite;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+        
+        @keyframes spin {
+            to { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+        
+        /* Smooth transitions */
+        * {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+    </style>
 </head>
 <body class="font-inter bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 bg-fixed">
     <!-- Animated Background Elements -->
@@ -102,25 +125,10 @@
         <div class="absolute top-1/3 right-1/4 w-64 h-64 bg-indigo-600 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
         <div class="absolute bottom-1/4 left-1/2 w-64 h-64 bg-blue-600 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-4000"></div>
     </div>
-    <!-- loader -->
-    <div class="loader w-full max-w-md p-24 rounded-xl bg-gray-900 shadow-lg">
-        <div class="flex justify-end mb-0">
-        <div class="w-8 h-8 bg-gray-800 rounded-full"></div>
-        </div>
-        <div class="flex flex-col items-center">
-        <div class="w-32 h-32 bg-gray-800 rounded-full mb-4"></div>
-        <div class="w-48 h-12 bg-gray-800 rounded mb-2"></div>
-        <div class="w-32 h-6 bg-gray-800 rounded mb-4"></div>
-        <div class="w-64 h-16 bg-gray-800 rounded mb-4"></div>
-        <div class="w-64 h-16 bg-gray-800 rounded mb-4"></div>
-        <div class="w-64 h-16 bg-gray-800 rounded mb-4"></div>
-        <div class="w-48 h-12 bg-gray-800 rounded mb-4"></div>
-        </div>
-        <div class="border-t border-gray-800 mt-4 pt-4">
-        <div class="w-2/3 h-4 bg-gray-800 rounded mb-2 mx-auto"></div>
-        <div class="w-1/2 h-4 bg-gray-800 rounded mx-auto"></div>
-        </div>
-    </div>
+
+    <!-- Loading State -->
+    <div class="loader"></div>
+    
     <!-- Main Content -->
     <main class="card-container relative z-10 transform translate-y-5">
         <!-- Profile card will be injected here -->

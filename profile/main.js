@@ -216,49 +216,34 @@ function handleProfileData(data, plan) {
             address: data.Address || ''
         };
 
-        // Apply background style if available
-        if (data['Selected Style']) {
-            const selectedStyle = data['Selected Style'];
-            
-            if (selectedStyle.startsWith('linear-gradient')) {
-            document.body.style.background = `${selectedStyle}`;
-            } else {
-            const styles = {
-              
-                // Professional Gradients
-                corporateGradient: { background: 'linear-gradient(145deg, rgb(9, 9, 11), rgb(24, 24, 27), rgb(9, 9, 11))' },
-                oceanGradient: { background: 'linear-gradient(145deg, rgb(2, 6, 23), rgb(15, 23, 42), rgb(2, 6, 23))' },
-                default: "url(https://www.tccards.tn//Assets/background.png) center fixed"
-            };
+  // Apply background style if available
+  applyBackgroundStyle(data["Selected Style"]);
 
-            document.body.style.background = styles[data['Selected Style']]?.background || styles.default;
-            document.body.style.backgroundSize = "cover";
-            }
-        }
-        const styles = {
-            corporateGradient: "linear-gradient(145deg, rgb(9, 9, 11), rgb(24, 24, 27), rgb(9, 9, 11))",
-            oceanGradient: "linear-gradient(145deg, rgb(2, 6, 23), rgb(15, 23, 42), rgb(2, 6, 23))",
-            minimal: { background: '#18181b' },
-            black: { background: '#09090b' },
-            navy: { background: '#020617' },
-            forest: { background: '#022c22' },
-            wine: { background: '#450a0a' },
-          
-            // Lighter color themes
-            clouds: { background: '#0ea5e9' },
-            Pink: { background: '#9b0055' },
-            SkyBlue: { background: '#2563eb' },
-            paleRed: { background: '#f00f4d' },
-          
-            // Professional Gradients
-            corporateGradient: { background: 'linear-gradient(145deg, rgb(9, 9, 11), rgb(24, 24, 27), rgb(9, 9, 11))' },
-            oceanGradient: { background: 'linear-gradient(145deg, rgb(2, 6, 23), rgb(15, 23, 42), rgb(2, 6, 23))' },
-            forestGradient: { background: 'linear-gradient(145deg, rgb(2, 44, 34), rgb(6, 78, 59), rgb(2, 44, 34))' },
-            burgundyGradient: { background: 'linear-gradient(145deg, rgb(69, 10, 10), rgb(127, 29, 29), rgb(69, 10, 10))' },
-            default: "url(https://tccards.tn/Assets/bg.png) cover center fixed"
-        };
-        // Render the profile card
-        container.innerHTML = `
+  // Render the profile card
+  container.innerHTML = createProfileCardHTML(
+    profileData,
+    data["Selected Style"]
+  );
+}
+
+function applyBackgroundStyle(selectedStyle) {
+  if (!selectedStyle) return;
+
+  if (selectedStyle.startsWith("linear-gradient")) {
+    document.body.style.background = selectedStyle;
+  } else {
+    document.body.style.background =
+      CONFIG.styles[selectedStyle]?.background || CONFIG.defaultBg;
+  }
+  document.body.style.backgroundSize = "cover";
+}
+
+function createProfileCardHTML(profileData, selectedStyle) {
+  const style = selectedStyle
+    ? CONFIG.styles[selectedStyle]?.background
+    : CONFIG.defaultBg;
+
+  return `
             <div class="w-full container max-w-md p-6 md:p-24 rounded-xl shadow-lg mx-auto" style="background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px);">
                 <div class="flex justify-end mb-0 top-right" onclick="showShareOptions('${escapeHtml(profileData.link)}')">
                     <div class="w-8 h-8 bg-gray-800 rounded-full flex items-center justify-center">
@@ -293,22 +278,8 @@ function handleProfileData(data, plan) {
                     </footer>
                 </div>
             </div>
-            `;
-        
-        // Show simple success notification
-        try {
-            if (typeof Swal !== 'undefined' && profileData) {
-                console.log('Profile found and loaded')
-            }
-        } catch (error) {
-            console.error('Error showing welcome message:', error);
-        }
-    } catch (error) {
-        console.error("Profile rendering error:", error);
-        showError("Error displaying profile");
-    }
+    `;
 }
-
 function renderSocialLinks(links) {
   if (!links || typeof links !== "string") return "";
 
