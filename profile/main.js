@@ -88,6 +88,22 @@ async function searchProfile(identifier, isIdLookup) {
   }
 }
 
+// Helper function with timeout
+async function fetchWithTimeout(resource, options = {}) {
+  const { timeout = 8000 } = options;
+
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), timeout);
+
+  const response = await fetch(resource, {
+    ...options,
+    signal: controller.signal,
+  });
+  clearTimeout(id);
+
+  return response;
+}
+
 // ===== NEW META TAG SYSTEM =====
 function updateMetaTags(profile) {
   // Use both Name/profilePic if present, fallback to previous logic
