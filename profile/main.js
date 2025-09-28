@@ -28,12 +28,6 @@ if (!hash) {
   const currentURL = window.location.href;
   const baseProfileURL = "https://card.tccards.tn/profile/";
 
-  // If current URL matches base profile URL exactly, redirect
-  if (currentURL === baseProfileURL) {
-    window.location.href = "https://card.tccards.tn/list/"; // Redirect to list page
-    return;
-  }
-
   updateMetaTags({ error: true });
   showError("No profile link provided");
   return;
@@ -210,46 +204,40 @@ function createProfileCardHTML(profileData, selectedStyle) {
     : CONFIG.defaultBg;
 
   return `
-    <center>
-        <div class="profile-container">
-            <div class="top-right" onclick="showShareOptions(window.location.href)">
-                <i class="fas fa-share-alt"></i>
+            <div class="w-full container max-w-md p-6 md:p-24 rounded-xl shadow-lg mx-auto" style="background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px);">
+                <div class="flex justify-end mb-0 top-right" onclick="showShareOptions('${escapeHtml(profileData.link)}')">
+                    <div class="w-8 h-8 bg-gray-800 rounded-full flex items-center justify-center">
+                        <i class="fas fa-share-alt text-gray-400"></i>
+                    </div>
+                </div>
+                <div class="flex flex-col items-center">
+                    <img src="${escapeHtml(profileData.profilePic)}" class="w-32 h-32 bg-gray-800 rounded-full mb-4 profile-picture" alt="${escapeHtml(profileData.name)}'s profile">
+                    <div class="w-full h-12 bg-gray-800 rounded mb-2 flex items-center justify-center">
+                        <h1 class="text-xl text-2xl font-bold text-white">${escapeHtml(profileData.name)}</h1>
+                    </div>
+                    ${profileData.tagline ? `<div class="w-full h-full bg-gray-800 rounded mb-4 flex items-center justify-center"><p class="text-gray-300">${escapeHtml(profileData.tagline)}</p></div>` : ''}
+                    <div class="w-full bg-transparent mb-4">
+                        ${renderSocialLinks(profileData.socialLinks)}
+                    </div>
+                    ${(profileData.email || profileData.phone || profileData.address) ? 
+                        `<div class="w-48 h-12 bg-gray-800 rounded mb-4 flex items-center justify-center">
+                            <button class="contact-btn" onclick="showContactDetails(${escapeHtml(JSON.stringify({
+                                name: profileData.name,
+                                profilepic: profileData.profilePic,
+                                email: profileData.email,
+                                phone: profileData.phone,
+                                address: profileData.address,
+                                style: styles[data['Selected Style']]?.background || styles.default
+                            }))})">Get in Touch</button>
+                        </div>` : ''}
+                </div>
+                <div class="border-t border-gray-800">
+                    <footer class="footer mt-4">
+                            <div class="w-full h-4 bg-gray-800 rounded mb-2 mx-auto"><a href="https://tccards.tn"> Powered by &copy; Total Connect ${new Date().getFullYear()}</a></div>
+                            <div class="w-1/2 h-4 bg-gray-800 rounded mx-auto"><a href="https://get.tccards.tn" target="_blank" style='color:springgreen'>Get Your Free Card</a></div>
+                    </footer>
+                </div>
             </div>
-            
-            <img src="${escapeHtml(profileData.profilePic)}" 
-             class="profile-picture js-profile-image" 
-             alt="${escapeHtml(profileData.name)}'s profile"
-             data-fallback="${escapeHtml(CONFIG.defaultProfilePic)}">
-            
-            <h2>${escapeHtml(profileData.name)}</h2>
-            ${
-              profileData.tagline
-                ? `<p>${escapeHtml(profileData.tagline)}</p>`
-                : ""
-            }
-            
-            ${renderSocialLinks(profileData.socialLinks)}
-
-            ${
-              profileData.email || profileData.phone || profileData.address
-                ? `<button class="contact-btn" onclick="showContactDetails(${escapeHtml(
-                    JSON.stringify({
-                      name: profileData.name,
-                      profilePic: profileData.profilePic,
-                      email: profileData.email,
-                      phone: profileData.phone,
-                      address: profileData.address,
-                      style: style,
-                    })
-                  )})">Get in Touch</button>`
-                : ""
-            }
-
-            <footer class="footer">
-                <p>Powered by &copy; Total Connect ${new Date().getFullYear()}</p>
-            </footer>
-        </div>
-    </center>
     `;
 }
 function renderSocialLinks(links) {
