@@ -71,17 +71,10 @@
     
     <link rel="preload" href="https://tccards.tn/Assets/bg.png" as="image">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link href="https://cdn.tailwindcss.com" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <link rel="preload" href="https://cdn.tailwindcss.com" as="script">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <!-- tailwindcss -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
     <link rel="stylesheet" href="style.css">
-<style>
-
-</style>
 </head>
 <body>
     <!-- Animated Background Elements -->
@@ -90,54 +83,15 @@
         <div class="absolute top-1/3 right-1/4 w-64 h-64 bg-indigo-600 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
         <div class="absolute bottom-1/4 left-1/2 w-64 h-64 bg-blue-600 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-4000"></div>
     </div>
-<div class="loader w-full max-w-md p-24 rounded-xl bg-gray-900 shadow-lg">
-    <div class="flex justify-end mb-0">
-      <div class="w-8 h-8 bg-gray-800 rounded-full"></div>
-    </div>
-    <div class="flex flex-col items-center">
-      <div class="w-32 h-32 bg-gray-800 rounded-full mb-4"></div>
-      <div class="w-48 h-12 bg-gray-800 rounded mb-2"></div>
-      <div class="w-32 h-6 bg-gray-800 rounded mb-4"></div>
-      <div class="w-64 h-16 bg-gray-800 rounded mb-4"></div>
-      <div class="w-64 h-16 bg-gray-800 rounded mb-4"></div>
-      <div class="w-64 h-16 bg-gray-800 rounded mb-4"></div>
-      <div class="w-48 h-12 bg-gray-800 rounded mb-4"></div>
-    </div>
-    <div class="border-t border-gray-800 mt-4 pt-4">
-      <div class="w-2/3 h-4 bg-gray-800 rounded mb-2 mx-auto"></div>
-      <div class="w-1/2 h-4 bg-gray-800 rounded mx-auto"></div>
-    </div>
-</div>
     <!-- Main Content -->
     <main class="card-container relative z-10 transform translate-y-5">
         <!-- Profile card will be injected here -->
     </main>
 
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script> 
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="main.js"></script>
-    
-    <script>
-        // Register custom animations
-        document.addEventListener('DOMContentLoaded', () => {
-            const style = document.createElement('style');
-            style.textContent = `
-                @keyframes blob {
-                    0% { transform: translate(0px, 0px) scale(1); }
-                    33% { transform: translate(30px, -50px) scale(1.1); }
-                    66% { transform: translate(-20px, 20px) scale(0.9); }
-                    100% { transform: translate(0px, 0px) scale(1); }
-                }
-                .animate-blob {
-                    animation: blob 7s infinite;
-                }
-                .animation-delay-2000 {
-                    animation-delay: 2s;
-                }
-                .animation-delay-4000 {
-                    animation-delay: 4s;
-                }
-            `;
-            document.head.appendChild(style);
-        });
-    </script>
 </body>
 </html>

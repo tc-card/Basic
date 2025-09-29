@@ -162,9 +162,6 @@ body {
 
 .contact-details-container {
     padding: 1.5rem;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
     border-radius: 12px;
     background: rgba(255, 255, 255, 0.1);
     backdrop-filter: blur(10px);
@@ -312,4 +309,7 @@ body {
     border-radius: 50%;
     cursor: pointer;
     transition: all 0.3s ease;
+}
+.top-right:hover {
+    background: rgba(255, 255, 255, 0.2);
 }

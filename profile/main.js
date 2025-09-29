@@ -18,7 +18,7 @@ const CONFIG = {
 };
 document.addEventListener("DOMContentLoaded", function() {
     // Set initial background
-    document.body.style.background = "url(https://tccards.tn/Assets/bg.png) center fixed";
+    document.body.style.background = "url(https://tccards.tn/Assets/background.png) center fixed";
     document.body.style.backgroundSize = "cover";
     document.body.style.backdropFilter = "blur(5px)";
 
@@ -180,71 +180,53 @@ function handleProfileData(data, plan) {
             oceanGradient: { background: 'linear-gradient(145deg, rgb(2, 6, 23), rgb(15, 23, 42), rgb(2, 6, 23))' },
             forestGradient: { background: 'linear-gradient(145deg, rgb(2, 44, 34), rgb(6, 78, 59), rgb(2, 44, 34))' },
             burgundyGradient: { background: 'linear-gradient(145deg, rgb(69, 10, 10), rgb(127, 29, 29), rgb(69, 10, 10))' },
-            default: "url(https://tccards.tn/Assets/bg.png) cover center fixed"
+            default: "url(https://tccards.tn/Assets/background.png) cover center fixed"
         };
         // Render the profile card
         container.innerHTML = `
-          <div class="w-full container max-w-md p-6 md:p-24 rounded-xl shadow-lg mx-auto" style="background: rgba(255,255,255,0.05); backdrop-filter: blur(10px);">
-            <!-- Share Button -->
-            <div class="flex justify-end mb-0 top-right" onclick="showShareOptions('@${escapeHtml(profileData.link)}')">
-              <div class="w-8 h-8 rounded-full flex items-center justify-center" style="background: rgba(255,255,255,0.05); backdrop-filter: blur(10px);">
-                <i class="fas fa-share-alt text-gray-400"></i>
-              </div>
-            </div>
-
-            <!-- Profile Picture and Name -->
-            <div class="flex items-center w-full mb-4">
-              <div class="flex justify-center">
-                <img src="${escapeHtml(profileData.profilePic)}"
-                    class="w-32 h-32 rounded-full profile-picture"
-                    style="background: rgba(255,255,255,0.05); backdrop-filter: blur(10px);"
-                    alt="${escapeHtml(profileData.name)}'s profile">
-              </div>
-              <div class=" items-center" style="background: rgba(255,255,255,0.05); backdrop-filter: blur(10px); border-radius: 0.75rem;">
-                <h1 class="text-2xl font-bold text-white w-full text-center">${escapeHtml(profileData.name)}</h1>
-              </div>
-            </div>
-
-            <!-- Tagline -->
-            ${profileData.tagline ? `
-              <div class="w-full mb-4 flex items-center justify-center rounded"
-                  style="background: rgba(255,255,255,0.05); backdrop-filter: blur(10px);">
-                <p class="text-gray-300">${escapeHtml(profileData.tagline)}</p>
-              </div>
-            ` : ''}
-
-            <!-- Social Links -->
-            <div class="w-full bg-transparent mb-4">
-              ${renderSocialLinks(profileData.socialLinks)}
-            </div>
-
-            <!-- Contact Button -->
-            ${(profileData.email || profileData.phone || profileData.address) ? `
-              <div class="w-48 h-12 mb-4 flex items-center justify-center rounded"
-                  style="background: rgba(255,255,255,0.05); backdrop-filter: blur(10px);">
-                <button class="contact-btn" onclick="showContactDetails(${escapeHtml(JSON.stringify({
-                  name: profileData.name,
-                  profilepic: profileData.profilePic,
-                  email: profileData.email,
-                  phone: profileData.phone,
-                  address: profileData.address,
-                  style: styles[data['Selected Style']]?.background || styles.default
-                }))})">Get in Touch</button>
-              </div>
-            ` : ''}
-
-            <!-- Footer -->
-            <div class="border-t border-gray-800">
-              <footer class="footer mt-4">
-                <div class="w-full h-4 rounded mb-2 mx-auto"
-                    style="background: rgba(255,255,255,0.05); backdrop-filter: blur(10px);">
-                  <a href="https://tccards.tn">Powered by &copy; Total Connect ${new Date().getFullYear()}</a>
+          <div class="w-full container max-w-md p-6 md:p-24 rounded-xl shadow-lg mx-auto" style="background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px);">
+                <div class="flex justify-end mb-0 top-right" onclick="showShareOptions('${escapeHtml(profileData.link)}')">
+                    <div class="w-8 h-8 bg-gray-800 rounded-full flex items-center justify-center">
+                        <i class="fas fa-share-alt text-gray-400"></i>
+                    </div>
                 </div>
-                <div class="w-1/2 h-4 bg-gray-800 rounded mx-auto">
-                  <a href="https://plans.tccards.tn" target="_blank" style="color:springgreen">Upgrade your Card</a>
+                <div class="flex flex-col items-center">
+                    <img src="${escapeHtml(profileData.profilePic)}" class="w-32 h-32 bg-gray-800 rounded-full mb-4 profile-picture" alt="${escapeHtml(profileData.name)}'s profile">
+                    <div class="w-full h-12 bg-gray-800 rounded mb-2 flex items-center justify-center">
+                        <h1 class="text-xl text-2xl font-bold text-white">${escapeHtml(profileData.name)}</h1>
+                    </div>
+                    ${profileData.tagline ? `<div class="w-full h-full bg-gray-800 rounded mb-4 flex items-center justify-center"><p class="text-gray-300">${escapeHtml(profileData.tagline)}</p></div>` : ''}
+                    <div class="w-full bg-transparent mb-4">
+                        ${renderSocialLinks(profileData.socialLinks)}
+                    </div>
+                    ${(profileData.email || profileData.phone || profileData.address) ? 
+                        `<div class="w-48 h-12 bg-gray-800 rounded mb-4 flex items-center justify-center">
+                            <button class="contact-btn" onclick="showContactDetails(${escapeHtml(JSON.stringify({
+                                name: profileData.name,
+                                profilepic: profileData.profilePic,
+                                email: profileData.email,
+                                phone: profileData.phone,
+                                address: profileData.address,
+                                style: styles[data['Selected Style']]?.background || styles.default
+                            }))})">Get in Touch</button>
+                        </div>` : ''}
+                  </div>
+
+                <!-- Footer -->
+                <div class="mt-8 pt-4 border-t border-gray-800">
+                  <footer class="space-y-2 text-center">
+                    <div class="w-full py-2 rounded-lg bg-white/5 backdrop-blur-md">
+                      <a href="https://tccards.tn" class="text-gray-400 hover:text-white text-sm transition-colors">
+                        Powered by &copy; Total Connect ${new Date().getFullYear()}
+                      </a>
+                    </div>
+                    <div class="w-1/2 mx-auto py-2 rounded-lg bg-gray-900">
+                      <a href="https://plans.tccards.tn" target="_blank" class="text-emerald-400 hover:text-emerald-300 text-sm font-medium transition-colors">
+                        Upgrade your Card
+                      </a>
+                    </div>
+                  </footer>
                 </div>
-              </footer>
-            </div>
           </div>
         `;
     
@@ -365,63 +347,36 @@ async function showContactDetails(contact) {
       throw new Error("Invalid contact data");
     }
 
-    const contactHtml = `
-          <div class="contact-details-container">
-            <div class="flex items-center w-full mb-4">
-              <div class="w-1/3 flex justify-center">
-                <img src="${escapeHtml(contact.profilePic)}"
-                    class="w-20 h-20 rounded-full profile-picture"
-                    alt="${escapeHtml(contact.name)}"
-                    onerror="this.src='https://tccards.tn/Assets/default.png'">
-              </div>
-              <div class="w-2/3 h-20 flex items-center">
-                <h3 class="text-xl font-bold text-white w-full text-center">${escapeHtml(contact.name)}</h3>
-              </div>
-            </div>
+        const contactHtml = `
+            <div class="contact-details-container">
+                <div class="contact-header" style="display: flex; align-items: center; gap: 1rem; justify-content: center;">
+                    <img src="${escapeHtml(contact.profilepic)}" class="profile-picture" alt="${escapeHtml(contact.name)}" onerror="this.src='https://tccards.tn/Assets/default.png'" style="width: 60px; height: 60px; border-radius: 50%;">
+                    <h3 style="margin: 0;">${escapeHtml(contact.name)}</h3>
+                </div>
             <div class="contact-table">
-                ${
-                  contact.email
-                    ? `
+                ${contact.email ? `
                 <div class="contact-row">
                     <div class="contact-icon"><i class="fas fa-envelope"></i></div>
                     <div class="contact-info">
-                    <a href="mailto:${escapeHtml(
-                      contact.email
-                    )}" class="contact-link">${escapeHtml(contact.email)}</a>
+                    <a href="mailto:${escapeHtml(contact.email)}" class="contact-link">${escapeHtml(contact.email)}</a>
                     </div>
-                </div>`
-                    : ""
-                }
-                ${
-                  contact.phone
-                    ? `
+                </div>` : ''}
+                ${contact.phone ? `
                 <div class="contact-row">
                     <div class="contact-icon"><i class="fas fa-phone"></i></div>
                     <div class="contact-info">
-                    <a href="tel:${escapeHtml(
-                      contact.phone
-                    )}" class="contact-link">${escapeHtml(contact.phone)}</a>
+                    <a href="tel:${escapeHtml(contact.phone)}" class="contact-link">${escapeHtml(contact.phone)}</a>
                     </div>
-                </div>`
-                    : ""
-                }
-                ${
-                  contact.address
-                    ? `
+                </div>` : ''}
+                ${contact.address ? `
                 <div class="contact-row">
                     <div class="contact-icon"><i class="fas fa-map-marker-alt"></i></div>
                     <div class="contact-info">
-                    <a href="https://maps.google.com/?q=${encodeURIComponent(
-                      contact.address
-                    )}" target="_blank" class="contact-link">${escapeHtml(
-                        contact.address
-                      )}</a>
+                    <a href="https://maps.google.com/?q=${encodeURIComponent(contact.address)}" target="_blank" class="contact-link">${escapeHtml(contact.address)}</a>
                     </div>
-                </div>`
-                    : ""
-                }
+                </div>` : ''}
             </div>
-          </div>
+            </div>
         `;
 
     const result = await Swal.fire({
