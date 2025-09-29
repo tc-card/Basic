@@ -20,7 +20,7 @@ document.addEventListener("DOMContentLoaded", function() {
     // Set initial background
     document.body.style.background = "url(https://tccards.tn/Assets/bg.png) center fixed";
     document.body.style.backgroundSize = "cover";
-  document.body.style.backdropFilter = "blur(5px)";
+    document.body.style.backdropFilter = "blur(5px)";
 
   // Extract identifier from URL hash
   const hash = window.location.hash.substring(1);
@@ -184,41 +184,69 @@ function handleProfileData(data, plan) {
         };
         // Render the profile card
         container.innerHTML = `
-            <div class="w-full container max-w-md p-6 md:p-24 rounded-xl shadow-lg mx-auto" style="background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px);">
-                <div class="flex justify-end mb-0 top-right" onclick="showShareOptions('${escapeHtml(profileData.link)}')">
-                    <div class="w-8 h-8 bg-gray-800 rounded-full flex items-center justify-center">
-                        <i class="fas fa-share-alt text-gray-400"></i>
-                    </div>
-                </div>
-                <div class="flex flex-col items-center">
-                    <img src="${escapeHtml(profileData.profilePic)}" class="w-32 h-32 bg-gray-800 rounded-full mb-4 profile-picture" alt="${escapeHtml(profileData.name)}'s profile">
-                    <div class="w-full h-12 bg-gray-800 rounded mb-2 flex items-center justify-center">
-                        <h1 class="text-xl text-2xl font-bold text-white">${escapeHtml(profileData.name)}</h1>
-                    </div>
-                    ${profileData.tagline ? `<div class="w-full h-full bg-gray-800 rounded mb-4 flex items-center justify-center"><p class="text-gray-300">${escapeHtml(profileData.tagline)}</p></div>` : ''}
-                    <div class="w-full bg-transparent mb-4">
-                        ${renderSocialLinks(profileData.socialLinks)}
-                    </div>
-                    ${(profileData.email || profileData.phone || profileData.address) ? 
-                        `<div class="w-48 h-12 bg-gray-800 rounded mb-4 flex items-center justify-center">
-                            <button class="contact-btn" onclick="showContactDetails(${escapeHtml(JSON.stringify({
-                                name: profileData.name,
-                                profilepic: profileData.profilePic,
-                                email: profileData.email,
-                                phone: profileData.phone,
-                                address: profileData.address,
-                                style: styles[data['Selected Style']]?.background || styles.default
-                            }))})">Get in Touch</button>
-                        </div>` : ''}
-                </div>
-                <div class="border-t border-gray-800">
-                    <footer class="footer mt-4">
-                            <div class="w-full h-4 bg-gray-800 rounded mb-2 mx-auto"><a href="https://tccards.tn"> Powered by &copy; Total Connect ${new Date().getFullYear()}</a></div>
-                            <div class="w-1/2 h-4 bg-gray-800 rounded mx-auto"><a href="https://get.tccards.tn" target="_blank" style='color:springgreen'>Get Your Free Card</a></div>
-                    </footer>
-                </div>
+          <div class="w-full container max-w-md p-6 md:p-24 rounded-xl shadow-lg mx-auto" style="background: rgba(255,255,255,0.05); backdrop-filter: blur(10px);">
+            <!-- Share Button -->
+            <div class="flex justify-end mb-0 top-right" onclick="showShareOptions('@${escapeHtml(profileData.link)}')">
+              <div class="w-8 h-8 rounded-full flex items-center justify-center" style="background: rgba(255,255,255,0.05); backdrop-filter: blur(10px);">
+                <i class="fas fa-share-alt text-gray-400"></i>
+              </div>
             </div>
-    `;
+
+            <!-- Profile Picture and Name -->
+            <div class="flex items-center w-full mb-4">
+              <div class="flex justify-center">
+                <img src="${escapeHtml(profileData.profilePic)}"
+                    class="w-32 h-32 rounded-full profile-picture"
+                    style="background: rgba(255,255,255,0.05); backdrop-filter: blur(10px);"
+                    alt="${escapeHtml(profileData.name)}'s profile">
+              </div>
+              <div class=" items-center" style="background: rgba(255,255,255,0.05); backdrop-filter: blur(10px); border-radius: 0.75rem;">
+                <h1 class="text-2xl font-bold text-white w-full text-center">${escapeHtml(profileData.name)}</h1>
+              </div>
+            </div>
+
+            <!-- Tagline -->
+            ${profileData.tagline ? `
+              <div class="w-full mb-4 flex items-center justify-center rounded"
+                  style="background: rgba(255,255,255,0.05); backdrop-filter: blur(10px);">
+                <p class="text-gray-300">${escapeHtml(profileData.tagline)}</p>
+              </div>
+            ` : ''}
+
+            <!-- Social Links -->
+            <div class="w-full bg-transparent mb-4">
+              ${renderSocialLinks(profileData.socialLinks)}
+            </div>
+
+            <!-- Contact Button -->
+            ${(profileData.email || profileData.phone || profileData.address) ? `
+              <div class="w-48 h-12 mb-4 flex items-center justify-center rounded"
+                  style="background: rgba(255,255,255,0.05); backdrop-filter: blur(10px);">
+                <button class="contact-btn" onclick="showContactDetails(${escapeHtml(JSON.stringify({
+                  name: profileData.name,
+                  profilepic: profileData.profilePic,
+                  email: profileData.email,
+                  phone: profileData.phone,
+                  address: profileData.address,
+                  style: styles[data['Selected Style']]?.background || styles.default
+                }))})">Get in Touch</button>
+              </div>
+            ` : ''}
+
+            <!-- Footer -->
+            <div class="border-t border-gray-800">
+              <footer class="footer mt-4">
+                <div class="w-full h-4 rounded mb-2 mx-auto"
+                    style="background: rgba(255,255,255,0.05); backdrop-filter: blur(10px);">
+                  <a href="https://tccards.tn">Powered by &copy; Total Connect ${new Date().getFullYear()}</a>
+                </div>
+                <div class="w-1/2 h-4 bg-gray-800 rounded mx-auto">
+                  <a href="https://plans.tccards.tn" target="_blank" style="color:springgreen">Upgrade your Card</a>
+                </div>
+              </footer>
+            </div>
+          </div>
+        `;
     
         // Show simple success notification
         try {
@@ -338,14 +366,17 @@ async function showContactDetails(contact) {
     }
 
     const contactHtml = `
-            <div class="contact-details-container">
-            <div class="contact-header">
-                <img src="${escapeHtml(
-                  contact.profilePic
-                )}" class="profile-picture" alt="${escapeHtml(
-      contact.name
-    )}" onerror="this.src='https://tccards.tn/Assets/default.png'">
-                <h3>${escapeHtml(contact.name)}</h3>
+          <div class="contact-details-container">
+            <div class="flex items-center w-full mb-4">
+              <div class="w-1/3 flex justify-center">
+                <img src="${escapeHtml(contact.profilePic)}"
+                    class="w-20 h-20 rounded-full profile-picture"
+                    alt="${escapeHtml(contact.name)}"
+                    onerror="this.src='https://tccards.tn/Assets/default.png'">
+              </div>
+              <div class="w-2/3 h-20 flex items-center">
+                <h3 class="text-xl font-bold text-white w-full text-center">${escapeHtml(contact.name)}</h3>
+              </div>
             </div>
             <div class="contact-table">
                 ${
@@ -390,7 +421,7 @@ async function showContactDetails(contact) {
                     : ""
                 }
             </div>
-            </div>
+          </div>
         `;
 
     const result = await Swal.fire({
