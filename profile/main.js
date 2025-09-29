@@ -192,16 +192,15 @@ function handleProfileData(data, plan) {
               </div>
             </div>
 
-            <!-- Profile Image & Name Side by Side -->
+            <!-- Profile Picture and Name -->
             <div class="flex items-center w-full mb-4">
-              <div class="w-1/3 flex justify-center">
+              <div class="flex justify-center">
                 <img src="${escapeHtml(profileData.profilePic)}"
                     class="w-32 h-32 rounded-full profile-picture"
                     style="background: rgba(255,255,255,0.05); backdrop-filter: blur(10px);"
                     alt="${escapeHtml(profileData.name)}'s profile">
               </div>
-              <div class="w-2/3 h-32 flex items-center"
-                  style="background: rgba(255,255,255,0.05); backdrop-filter: blur(10px); border-radius: 0.75rem;">
+              <div class=" items-center" style="background: rgba(255,255,255,0.05); backdrop-filter: blur(10px); border-radius: 0.75rem;">
                 <h1 class="text-2xl font-bold text-white w-full text-center">${escapeHtml(profileData.name)}</h1>
               </div>
             </div>
@@ -375,8 +374,7 @@ async function showContactDetails(contact) {
                     alt="${escapeHtml(contact.name)}"
                     onerror="this.src='https://tccards.tn/Assets/default.png'">
               </div>
-              <div class="w-2/3 h-20 flex items-center"
-                  style="background: rgba(255,255,255,0.05); backdrop-filter: blur(10px); border-radius: 0.75rem;">
+              <div class="w-2/3 h-20 flex items-center">
                 <h3 class="text-xl font-bold text-white w-full text-center">${escapeHtml(contact.name)}</h3>
               </div>
             </div>
