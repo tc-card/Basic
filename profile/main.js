@@ -206,8 +206,7 @@ function handleProfileData(data, plan) {
                                 profilepic: profileData.profilePic,
                                 email: profileData.email,
                                 phone: profileData.phone,
-                                address: profileData.address,
-                                style: styles[data['Selected Style']]?.background || styles.default
+                                address: profileData.address
                             }))})">Get in Touch</button>
                         </div>` : ''}
                   </div>
@@ -382,10 +381,7 @@ async function showContactDetails(contact) {
     const result = await Swal.fire({
       title: "Contact Details",
       html: contactHtml,
-      background:
-        typeof contact.style === "object"
-          ? contact.style?.background
-          : contact.style || "#162949",
+      background:"#162949",
       confirmButtonText: "Copy Details",
       showCancelButton: true,
       cancelButtonText: "Close",

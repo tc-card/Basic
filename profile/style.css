@@ -27,6 +27,14 @@ body {
     background-repeat: no-repeat;
 }
 
+.profile-picture{
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid rgba(255, 255, 255, 0.2);
+    margin-bottom: 15px;
+}
 
 .loader {
     text-align: center;
