@@ -1,6 +1,7 @@
 
 
 // --- Simple, robust analytics collector for profile actions with per-device, per-action timestamp checks ---
+console.log("[analytics.js] loaded");
 const ANALYTICS_ENDPOINT = "https://script.google.com/macros/s/AKfycbw8tkRI9dHsspu07YS6agXF4wrT1X8tyt9_4D_TnbffQliyLdp1a71fPu197gw3tiWe/exec";
 
 let analyticsProfile = { link: null };
@@ -15,6 +16,7 @@ let analyticsState = {
 };
 
 function analyticsTracking(link, _email, status) {
+  console.log("[analyticsTracking] called", { link, status });
   if (status !== "active") return;
   analyticsProfile = { link };
   loadAnalyticsState();
