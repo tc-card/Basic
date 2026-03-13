@@ -1,3 +1,5 @@
+import { analyticsTracking } from "./analytics.js";
+
 const CONFIG = {
   defaultBg: "url(https://tccards.tn/Assets/background.png) center fixed",
   defaultProfilePic: "https://tccards.tn/Assets/default.png",
@@ -237,6 +239,8 @@ function handleProfileData(data, plan) {
         } catch (error) {
             console.error('Error showing welcome message:', error);
         }
+        // Call analyticsTracking after successful profile render
+        analyticsTracking(profileData.link, null, "active");
     } catch (error) {
         console.error("Profile rendering error:", error);
         showError("Error displaying profile");
