@@ -18,7 +18,9 @@ const CONFIG = {
 };
 document.addEventListener("DOMContentLoaded", function() {
     // Set initial background
-    applyBackgroundStyle(CONFIG.defaultBg);
+    document.body.style.background = "url(https://tccards.tn/Assets/background.png) center fixed";
+    document.body.style.backgroundSize = "cover";
+    document.body.style.backdropFilter = "blur(5px)";
 
   // Extract identifier from URL hash
   const hash = window.location.hash.substring(1);
@@ -115,6 +117,12 @@ function handleProfileData(data, plan) {
         showError("This profile is currently inactive");
         return;
     }
+    // Check if profile is older than 30 days
+    const now = Date.now();
+    if (now - data.timestamp >= 30 * 24 * 60 * 60 * 1000) {
+        showError("This profile has expired. Please contact support to renew.");
+        return;
+    }
 
     try {
         // Apply plan-specific features
@@ -135,37 +143,45 @@ function handleProfileData(data, plan) {
 
         // Apply background style if available
         if (data['Selected Style']) {
-          applyBackgroundStyle(data['Selected Style']);
-        }
-    // Centralized styles object
-    const styles = {
-      corporateGradient: { background: 'linear-gradient(145deg, rgb(9, 9, 11), rgb(24, 24, 27), rgb(9, 9, 11))' },
-      oceanGradient: { background: 'linear-gradient(145deg, rgb(2, 6, 23), rgb(15, 23, 42), rgb(2, 6, 23))' },
-      minimal: { background: '#18181b' },
-      black: { background: '#09090b' },
-      navy: { background: '#020617' },
-      forest: { background: '#022c22' },
-      wine: { background: '#450a0a' },
-      clouds: { background: '#0ea5e9' },
-      Pink: { background: '#9b0055' },
-      SkyBlue: { background: '#2563eb' },
-      paleRed: { background: '#f00f4d' },
-      forestGradient: { background: 'linear-gradient(145deg, rgb(2, 44, 34), rgb(6, 78, 59), rgb(2, 44, 34))' },
-      burgundyGradient: { background: 'linear-gradient(145deg, rgb(69, 10, 10), rgb(127, 29, 29), rgb(69, 10, 10))' },
-      default: { background: 'url(https://tccards.tn/Assets/background.png) center fixed' }
-    };
+            const selectedStyle = data['Selected Style'];
+            
+            if (selectedStyle.startsWith('linear-gradient')) {
+            document.body.style.background = `${selectedStyle}`;
+            } else {
+            const styles = {
+              
+                // Professional Gradients
+                corporateGradient: { background: 'linear-gradient(145deg, rgb(9, 9, 11), rgb(24, 24, 27), rgb(9, 9, 11))' },
+                oceanGradient: { background: 'linear-gradient(145deg, rgb(2, 6, 23), rgb(15, 23, 42), rgb(2, 6, 23))' },
+                default: "url(https://www.tccards.tn//Assets/background.png) center fixed"
+            };
 
-    // Centralized background style application
-    function applyBackgroundStyle(styleKeyOrValue) {
-      let styleObj = styles[styleKeyOrValue];
-      if (!styleObj && typeof styleKeyOrValue === 'string' && styleKeyOrValue.startsWith('linear-gradient')) {
-        styleObj = { background: styleKeyOrValue };
-      }
-      if (!styleObj) styleObj = styles.default;
-      document.body.style.background = styleObj.background;
-      document.body.style.backgroundSize = 'cover';
-      document.body.style.backdropFilter = 'blur(5px)';
-    }
+            document.body.style.background = styles[data['Selected Style']]?.background || styles.default;
+            document.body.style.backgroundSize = "cover";
+            }
+        }
+        const styles = {
+            corporateGradient: "linear-gradient(145deg, rgb(9, 9, 11), rgb(24, 24, 27), rgb(9, 9, 11))",
+            oceanGradient: "linear-gradient(145deg, rgb(2, 6, 23), rgb(15, 23, 42), rgb(2, 6, 23))",
+            minimal: { background: '#18181b' },
+            black: { background: '#09090b' },
+            navy: { background: '#020617' },
+            forest: { background: '#022c22' },
+            wine: { background: '#450a0a' },
+          
+            // Lighter color themes
+            clouds: { background: '#0ea5e9' },
+            Pink: { background: '#9b0055' },
+            SkyBlue: { background: '#2563eb' },
+            paleRed: { background: '#f00f4d' },
+          
+            // Professional Gradients
+            corporateGradient: { background: 'linear-gradient(145deg, rgb(9, 9, 11), rgb(24, 24, 27), rgb(9, 9, 11))' },
+            oceanGradient: { background: 'linear-gradient(145deg, rgb(2, 6, 23), rgb(15, 23, 42), rgb(2, 6, 23))' },
+            forestGradient: { background: 'linear-gradient(145deg, rgb(2, 44, 34), rgb(6, 78, 59), rgb(2, 44, 34))' },
+            burgundyGradient: { background: 'linear-gradient(145deg, rgb(69, 10, 10), rgb(127, 29, 29), rgb(69, 10, 10))' },
+            default: "url(https://tccards.tn/Assets/background.png) cover center fixed"
+        };
         // Render the profile card
         container.innerHTML = `
           <div class="w-full container max-w-md p-6 md:p-24 rounded-xl shadow-lg mx-auto" style="background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px);">
@@ -177,7 +193,7 @@ function handleProfileData(data, plan) {
                 <div class="flex flex-col items-center">
                     <img src="${escapeHtml(profileData.profilePic)}" class="w-32 h-32 bg-gray-800 rounded-full mb-4 profile-picture" alt="${escapeHtml(profileData.name)}'s profile">
                     <div class="w-full h-12 bg-gray-800 rounded mb-2 flex items-center justify-center">
-                        <h1 class="text-2xl font-bold text-white">${escapeHtml(profileData.name)}</h1>
+                        <h1 class="text-xl text-2xl font-bold text-white">${escapeHtml(profileData.name)}</h1>
                     </div>
                     ${profileData.tagline ? `<div class="w-full h-full bg-gray-800 rounded mb-4 flex items-center justify-center"><p class="text-gray-300">${escapeHtml(profileData.tagline)}</p></div>` : ''}
                     <div class="w-full bg-transparent mb-4">
