@@ -96,7 +96,7 @@ function doGet(e) {
         ? ContentService.MimeType.JAVASCRIPT 
         : ContentService.MimeType.JSON
     );
-
+    output.setHeader("Access-Control-Allow-Origin", "*");
     return output;
 
   } catch (error) {
@@ -108,6 +108,7 @@ function doGet(e) {
       })
     );
     errorOutput.setMimeType(ContentService.MimeType.JSON);
+    errorOutput.setHeader("Access-Control-Allow-Origin", "*");
     return errorOutput;
   }
 }
