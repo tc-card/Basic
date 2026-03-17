@@ -4,7 +4,7 @@ const CONFIG = {
   defaultBg: "url(https://tccards.tn/Assets/background.png) center fixed",
   defaultProfilePic: "https://tccards.tn/Assets/default.png",
   databases: {
-    id: "AKfycbwG25U8SVguyqXctxFYvCceFlseUBlrH9XeQ_6UeoxXXPMxzDBxI80AsZwULJoJNzUo",
+    id: "AKfycbzEDfnLY-uomlJGRMtM-76uYdkMJZoFsJsh_UAHd5iHgUxBrJEkncVvksEithMQDNgA",
     plan: "basic",
   },
   styles: {

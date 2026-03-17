@@ -2,7 +2,7 @@
 
 // --- Simple, robust analytics collector for profile actions with per-device, per-action timestamp checks ---
 console.log("[analytics.js] loaded");
-const ANALYTICS_ENDPOINT = "https://script.google.com/macros/s/AKfycbwG25U8SVguyqXctxFYvCceFlseUBlrH9XeQ_6UeoxXXPMxzDBxI80AsZwULJoJNzUo/exec";
+const ANALYTICS_ENDPOINT = "https://script.google.com/macros/s/AKfycbzEDfnLY-uomlJGRMtM-76uYdkMJZoFsJsh_UAHd5iHgUxBrJEkncVvksEithMQDNgA/exec";
 
 let analyticsProfile = { link: null };
 let analyticsState = {
