@@ -1,7 +1,9 @@
 function findRow(identifier, byId = false) {
   const CACHE_EXPIRATION = 300; // 5 minutes
   const cache = CacheService.getScriptCache();
-  const cacheKey = (byId ? 'id_' : 'link_') + identifier.trim();
+  // Normalize identifier for cache key and search
+  const cleanIdentifier = identifier ? identifier.trim().toLowerCase() : '';
+  const cacheKey = (byId ? 'id_' : 'link_') + cleanIdentifier.replace(/^@/, '');
 
   // Check cache
   const cachedData = cache.get(cacheKey);
@@ -23,55 +25,64 @@ function findRow(identifier, byId = false) {
   const lastCol = sheet.getLastColumn();
   if (lastRow <= 1) return null; // No data rows
 
-  const headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
-  const cleanIdentifier = identifier.trim();
+  const data = sheet.getRange(1, 1, lastRow, lastCol).getValues();
+  const headers = data[0];
   const columnName = byId ? 'ID' : 'Link';
   const columnIndex = headers.findIndex(h => h.toString().trim() === columnName);
   if (columnIndex === -1) throw new Error(`${columnName} column not found`);
 
-  // Use TextFinder for efficient, case-sensitive search
-  const colRange = sheet.getRange(2, columnIndex + 1, lastRow - 1, 1); // skip header
-  const toCompare = byId ? cleanIdentifier : cleanIdentifier.replace(/^@/, '');
-  let found = colRange.createTextFinder(toCompare).matchCase(true).matchEntireCell(true).findNext();
-  // If not found, try with @ prefix (for link only)
-  if (!found && !byId && !toCompare.startsWith('@')) {
-    found = colRange.createTextFinder('@' + toCompare).matchCase(true).matchEntireCell(true).findNext();
-  }
-  if (found) {
-    const rowIdx = found.getRow();
-    const rowData = sheet.getRange(rowIdx, 1, 1, lastCol).getValues()[0];
-    const responseData = {};
-    headers.forEach((header, index) => {
-      responseData[header] = rowData[index] !== null ? String(rowData[index]).trim() : '';
-    });
-    // Validate required fields
-    if (!responseData.Name) {
-      throw new Error('Profile data missing required Name field');
+  // Search for match (case-insensitive, handle @ prefix for links)
+  for (let i = 1; i < data.length; i++) {
+    let rowValue = String(data[i][columnIndex] || '').trim().toLowerCase();
+    let toCompare = byId ? cleanIdentifier : cleanIdentifier.replace(/^@/, '');
+    if (rowValue === toCompare || (!byId && rowValue === `@${toCompare}`)) {
+      const responseData = {};
+      headers.forEach((header, index) => {
+        responseData[header] = data[i][index] !== null ? String(data[i][index]).trim() : '';
+      });
+      // Always include a timestamp field (last modified or now)
+      responseData.timestamp = getRowTimestamp(sheet, i + 1) || Date.now();
+      if (!responseData.Name) {
+        throw new Error('Profile data missing required Name field');
+      }
+      try {
+        cache.put(cacheKey, JSON.stringify(responseData), CACHE_EXPIRATION);
+      } catch (e) {
+        console.error('Failed to cache data:', e);
+      }
+      return responseData;
     }
-    try {
-      cache.put(cacheKey, JSON.stringify(responseData), CACHE_EXPIRATION);
-    } catch (e) {
-      console.error('Failed to cache data:', e);
-    }
-    return responseData;
   }
   return null;
 }
 
+// Helper to get row timestamp (last updated time if available, else now)
+function getRowTimestamp(sheet, row) {
+  // Try to get last updated time if present in sheet, else return Date.now()
+  const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  const tsIdx = headers.findIndex(h => h.toString().toLowerCase().includes('timestamp'));
+  if (tsIdx !== -1) {
+    const val = sheet.getRange(row, tsIdx + 1).getValue();
+    if (val) {
+      if (val instanceof Date) return val.getTime();
+      if (!isNaN(val)) return Number(val);
+    }
+  }
+  return Date.now();
+}
+
 function doGet(e) {
+  let output;
   try {
     if (!e.parameter) throw new Error('Missing parameters');
-    
     // Validate identifier
     const identifier = e.parameter.id || e.parameter.link;
     if (!identifier || typeof identifier !== 'string') {
       throw new Error('Invalid identifier parameter');
     }
-    
     // Search for profile
     const data = findRow(identifier, !!e.parameter.id);
     if (!data) throw new Error('Profile not found');
-
     // Prepare safe response data
     const response = {
       status: 'success',
@@ -79,38 +90,33 @@ function doGet(e) {
         status: data.Status || 'Inactive',
         Name: data.Name || '',
         Link: data.Link || '',
-        // Add other fields as needed
+        timestamp: data.timestamp || Date.now(),
         ...sanitizeProfileData(data)
       }
     };
-
-    // Return response
-    const output = ContentService.createTextOutput(
-      e.parameter.callback 
+    output = ContentService.createTextOutput(
+      e.parameter.callback
         ? `${e.parameter.callback}(${JSON.stringify(response)})`
         : JSON.stringify(response)
     );
-
     output.setMimeType(
-      e.parameter.callback 
-        ? ContentService.MimeType.JAVASCRIPT 
+      e.parameter.callback
+        ? ContentService.MimeType.JAVASCRIPT
         : ContentService.MimeType.JSON
     );
-    output.setHeader("Access-Control-Allow-Origin", "*");
-    return output;
-
   } catch (error) {
     console.error('Error in doGet:', error);
-    const errorOutput = ContentService.createTextOutput(
+    output = ContentService.createTextOutput(
       JSON.stringify({
         status: 'error',
         message: error.message
       })
     );
-    errorOutput.setMimeType(ContentService.MimeType.JSON);
-    errorOutput.setHeader("Access-Control-Allow-Origin", "*");
-    return errorOutput;
+    output.setMimeType(ContentService.MimeType.JSON);
   }
+  // Always set CORS header
+  output.setHeader('Access-Control-Allow-Origin', '*');
+  return output;
 }
 
 // Helper functions
