@@ -4,7 +4,7 @@ const CONFIG = {
   defaultBg: "url(https://tccards.tn/Assets/background.png) center fixed",
   defaultProfilePic: "https://tccards.tn/Assets/default.png",
   databases: {
-    id: "AKfycbyJDgBUjsuP7dWkmNvomiMj4Q0B86tQf7P86O6OJlJSgHNdk43eohKY9gV76vbGqnFp",
+    id: "AKfycbwEd1f6mtN40Nvoa7M_g_8kB_UeiKl8QkuoUzGsikef7WSpEfBELUGKLeq5ywg6TRal",
     plan: "basic",
   },
   styles: {
@@ -18,11 +18,13 @@ const CONFIG = {
     },
   },
 };
-document.addEventListener("DOMContentLoaded", function() {
-    // Set initial background
-    document.body.style.background = "url(https://tccards.tn/Assets/background.png) center fixed";
-    document.body.style.backgroundSize = "cover";
-    document.body.style.backdropFilter = "blur(5px)";
+
+document.addEventListener("DOMContentLoaded", function () {
+  // Set initial background
+  document.body.style.background =
+    "url(https://tccards.tn/Assets/background.png) center fixed";
+  document.body.style.backgroundSize = "cover";
+  document.body.style.backdropFilter = "blur(5px)";
 
   // Extract identifier from URL hash
   const hash = window.location.hash.substring(1);
@@ -48,9 +50,7 @@ async function searchProfile(identifier, isIdLookup) {
     const param = isIdLookup ? "id" : "link";
     const url = `https://script.google.com/macros/s/${CONFIG.databases.id}/exec?${param}=${encodeURIComponent(identifier)}`;
 
-    const response = await fetchWithTimeout(url, {
-      timeout: 5000
-    });
+    const response = await fetchWithTimeout(url, { timeout: 5000 });
 
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
 
@@ -75,181 +75,160 @@ async function searchProfile(identifier, isIdLookup) {
 // Helper function with timeout
 async function fetchWithTimeout(resource, options = {}) {
   const { timeout = 18000 } = options;
-
   const controller = new AbortController();
   const id = setTimeout(() => controller.abort(), timeout);
-
   const response = await fetch(resource, {
     ...options,
     signal: controller.signal,
   });
   clearTimeout(id);
-
   return response;
 }
+
 function handleProfileData(data, plan) {
-    const loader = document.querySelector('.loader');
-    if (loader) {
-        loader.style.transition = 'opacity 0.5s ease';
-        loader.style.opacity = '0';
-        setTimeout(() => {
-            loader.style.display = 'none';
-        }, 500);
-    }   
-    // Open the data array received data.data to access the profile data
-    data = data.data || data;
-    plan = plan || 'free';
-    // Check if data is valid
-    if (!data || typeof data !== 'object') {
-        showError("Invalid profile data received");
-        return;
+  const loader = document.querySelector(".loader");
+  if (loader) {
+    loader.style.transition = "opacity 0.5s ease";
+    loader.style.opacity = "0";
+    setTimeout(() => {
+      loader.style.display = "none";
+    }, 500);
+  }
+
+  data = data.data || data;
+  plan = plan || "free";
+
+  if (!data || typeof data !== "object") {
+    showError("Invalid profile data received");
+    return;
+  }
+
+  if (data.status === "error") {
+    showError(data?.message || "Profile data could not be loaded");
+    return;
+  }
+
+  if (!data.Name) {
+    showError("Invalid profile data: Name is required");
+    return;
+  }
+
+  if (data?.Status && data.Status !== "Active") {
+    showError("This profile is currently inactive");
+    return;
+  }
+  
+
+  try {
+    const container = document.querySelector(".card-container");
+    container.style.display = "block";
+
+    const profileData = {
+      name: data.Name || "User",
+      link: data.Link || "tccards",
+      tagline: data.Tagline || "",
+      profilePic:
+        data["Profile Picture URL"] ||
+        "https://tccards.tn/Assets/default.png",
+      socialLinks: data["Social Links"] || "",
+      email: data.Email || "",
+      phone: data.Phone || "",
+      address: data.Address || "",
+    };
+
+    // Apply background style if available
+    if (data["Selected Style"]) {
+      const selectedStyle = data["Selected Style"];
+      if (selectedStyle.startsWith("linear-gradient")) {
+        document.body.style.background = selectedStyle;
+      } else {
+        const styles = {
+          corporateGradient: {
+            background:
+              "linear-gradient(145deg, rgb(9, 9, 11), rgb(24, 24, 27), rgb(9, 9, 11))",
+          },
+          oceanGradient: {
+            background:
+              "linear-gradient(145deg, rgb(2, 6, 23), rgb(15, 23, 42), rgb(2, 6, 23))",
+          },
+          default:
+            "url(https://www.tccards.tn/Assets/background.png) center fixed",
+        };
+        document.body.style.background =
+          styles[data["Selected Style"]]?.background || styles.default;
+        document.body.style.backgroundSize = "cover";
+      }
     }
 
-    if (data.status === "error") {
-        showError(data?.message || "Profile data could not be loaded");
-        return;
-    }
-    
-    if (!data.Name) {
-        showError("Invalid profile data: Name is required");
-        return;
-    }
-    
-    if (data?.Status && data.Status !== "Active") {
-        showError("This profile is currently inactive");
-        return;
-    }
-    // Check if profile is older than 30 days
-    const now = Date.now();
-    if (now - data.timestamp >= 30 * 24 * 60 * 60 * 1000) {
-        showError("This profile has expired. Please contact support to renew.");
-        return;
-    }
+    container.innerHTML = `
+      <div class="w-full container max-w-md p-6 md:p-24 rounded-xl shadow-lg mx-auto" style="background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px);">
+        <div class="flex justify-end mb-0 top-right" onclick="showShareOptions('https://card.tccards.tn/@${escapeHtml(profileData.link)}')">
+          <div class="w-8 h-8 bg-gray-800 rounded-full flex items-center justify-center">
+            <i class="fas fa-share-alt text-gray-400"></i>
+          </div>
+        </div>
+        <div class="flex flex-col items-center">
+          <img src="${escapeHtml(profileData.profilePic)}" class="w-32 h-32 bg-gray-800 rounded-full mb-4 profile-picture" alt="${escapeHtml(profileData.name)}'s profile">
+          <div class="w-full h-12 bg-gray-800 rounded mb-2 flex items-center justify-center">
+            <h1 class="text-xl text-2xl font-bold text-white">${escapeHtml(profileData.name)}</h1>
+          </div>
+          ${profileData.tagline ? `<div class="w-full h-full bg-gray-800 rounded mb-4 flex items-center justify-center"><p class="text-gray-300">${escapeHtml(profileData.tagline)}</p></div>` : ""}
+          <div class="w-full bg-transparent mb-4">
+            ${renderSocialLinks(profileData.socialLinks)}
+          </div>
+          ${
+            profileData.email || profileData.phone || profileData.address
+              ? `<div class="w-48 h-12 bg-gray-800 rounded mb-4 flex items-center justify-center">
+              <button class="contact-btn" onclick="showContactDetails(${escapeHtml(
+                JSON.stringify({
+                  name: profileData.name,
+                  profilepic: profileData.profilePic,
+                  email: profileData.email,
+                  phone: profileData.phone,
+                  address: profileData.address,
+                })
+              )})">Get in Touch</button>
+            </div>`
+              : ""
+          }
+        </div>
+
+        <!-- Footer -->
+        <div class="mt-8 pt-4 border-t border-gray-800">
+          <footer class="space-y-2 text-center">
+            <div class="w-full py-2 rounded-lg bg-white/5 backdrop-blur-md">
+              <a href="https://tccards.tn" class="text-gray-400 hover:text-white text-sm transition-colors">
+                Powered by &copy; Total Connect ${new Date().getFullYear()}
+              </a>
+            </div>
+            <div class="w-1/2 mx-auto py-2 rounded-lg bg-gray-900">
+              <a href="https://plans.tccards.tn" target="_blank" class="text-emerald-400 hover:text-emerald-300 text-sm font-medium transition-colors">
+                Upgrade your Card
+              </a>
+            </div>
+          </footer>
+        </div>
+      </div>
+    `;
 
     try {
-        // Apply plan-specific features
-        const container = document.querySelector(".card-container");
-        container.style.display = 'block';
-        
-        // Safe data access with fallbacks
-        const profileData = {
-            name: data.Name || 'User',
-            link: data.Link || 'tccards',
-            tagline: data.Tagline || '',
-            profilePic: data['Profile Picture URL'] || 'https://tccards.tn/Assets/default.png',
-            socialLinks: data['Social Links'] || '',
-            email: data.Email || '',
-            phone: data.Phone || '',
-            address: data.Address || ''
-        };
-
-        // Apply background style if available
-        if (data['Selected Style']) {
-            const selectedStyle = data['Selected Style'];
-            
-            if (selectedStyle.startsWith('linear-gradient')) {
-            document.body.style.background = `${selectedStyle}`;
-            } else {
-            const styles = {
-              
-                // Professional Gradients
-                corporateGradient: { background: 'linear-gradient(145deg, rgb(9, 9, 11), rgb(24, 24, 27), rgb(9, 9, 11))' },
-                oceanGradient: { background: 'linear-gradient(145deg, rgb(2, 6, 23), rgb(15, 23, 42), rgb(2, 6, 23))' },
-                default: "url(https://www.tccards.tn//Assets/background.png) center fixed"
-            };
-
-            document.body.style.background = styles[data['Selected Style']]?.background || styles.default;
-            document.body.style.backgroundSize = "cover";
-            }
-        }
-        const styles = {
-            corporateGradient: "linear-gradient(145deg, rgb(9, 9, 11), rgb(24, 24, 27), rgb(9, 9, 11))",
-            oceanGradient: "linear-gradient(145deg, rgb(2, 6, 23), rgb(15, 23, 42), rgb(2, 6, 23))",
-            minimal: { background: '#18181b' },
-            black: { background: '#09090b' },
-            navy: { background: '#020617' },
-            forest: { background: '#022c22' },
-            wine: { background: '#450a0a' },
-          
-            // Lighter color themes
-            clouds: { background: '#0ea5e9' },
-            Pink: { background: '#9b0055' },
-            SkyBlue: { background: '#2563eb' },
-            paleRed: { background: '#f00f4d' },
-          
-            // Professional Gradients
-            corporateGradient: { background: 'linear-gradient(145deg, rgb(9, 9, 11), rgb(24, 24, 27), rgb(9, 9, 11))' },
-            oceanGradient: { background: 'linear-gradient(145deg, rgb(2, 6, 23), rgb(15, 23, 42), rgb(2, 6, 23))' },
-            forestGradient: { background: 'linear-gradient(145deg, rgb(2, 44, 34), rgb(6, 78, 59), rgb(2, 44, 34))' },
-            burgundyGradient: { background: 'linear-gradient(145deg, rgb(69, 10, 10), rgb(127, 29, 29), rgb(69, 10, 10))' },
-            default: "url(https://tccards.tn/Assets/background.png) cover center fixed"
-        };
-        // Render the profile card
-        container.innerHTML = `
-          <div class="w-full container max-w-md p-6 md:p-24 rounded-xl shadow-lg mx-auto" style="background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px);">
-                <div class="flex justify-end mb-0 top-right" onclick="showShareOptions('https://card.tccards.tn/@${escapeHtml(profileData.link)}')">
-                    <div class="w-8 h-8 bg-gray-800 rounded-full flex items-center justify-center">
-                        <i class="fas fa-share-alt text-gray-400"></i>
-                    </div>
-                </div>
-                <div class="flex flex-col items-center">
-                    <img src="${escapeHtml(profileData.profilePic)}" class="w-32 h-32 bg-gray-800 rounded-full mb-4 profile-picture" alt="${escapeHtml(profileData.name)}'s profile">
-                    <div class="w-full h-12 bg-gray-800 rounded mb-2 flex items-center justify-center">
-                        <h1 class="text-xl text-2xl font-bold text-white">${escapeHtml(profileData.name)}</h1>
-                    </div>
-                    ${profileData.tagline ? `<div class="w-full h-full bg-gray-800 rounded mb-4 flex items-center justify-center"><p class="text-gray-300">${escapeHtml(profileData.tagline)}</p></div>` : ''}
-                    <div class="w-full bg-transparent mb-4">
-                        ${renderSocialLinks(profileData.socialLinks)}
-                    </div>
-                    ${(profileData.email || profileData.phone || profileData.address) ? 
-                        `<div class="w-48 h-12 bg-gray-800 rounded mb-4 flex items-center justify-center">
-                            <button class="contact-btn" onclick="showContactDetails(${escapeHtml(JSON.stringify({
-                                name: profileData.name,
-                                profilepic: profileData.profilePic,
-                                email: profileData.email,
-                                phone: profileData.phone,
-                                address: profileData.address
-                            }))})">Get in Touch</button>
-                        </div>` : ''}
-                  </div>
-
-                <!-- Footer -->
-                <div class="mt-8 pt-4 border-t border-gray-800">
-                  <footer class="space-y-2 text-center">
-                    <div class="w-full py-2 rounded-lg bg-white/5 backdrop-blur-md">
-                      <a href="https://tccards.tn" class="text-gray-400 hover:text-white text-sm transition-colors">
-                        Powered by &copy; Total Connect ${new Date().getFullYear()}
-                      </a>
-                    </div>
-                    <div class="w-1/2 mx-auto py-2 rounded-lg bg-gray-900">
-                      <a href="https://plans.tccards.tn" target="_blank" class="text-emerald-400 hover:text-emerald-300 text-sm font-medium transition-colors">
-                        Upgrade your Card
-                      </a>
-                    </div>
-                  </footer>
-                </div>
-          </div>
-        `;
-    
-        // Show simple success notification
-        try {
-            if (typeof Swal !== 'undefined' && profileData) {
-                console.log('Profile found and loaded')
-            }
-        } catch (error) {
-            console.error('Error showing welcome message:', error);
-        }
-        // Call analyticsTracking after successful profile render
-        analyticsTracking(profileData.link, null, "active");
+      if (typeof Swal !== "undefined" && profileData) {
+        console.log("Profile found and loaded");
+      }
     } catch (error) {
-        console.error("Profile rendering error:", error);
-        showError("Error displaying profile");
+      console.error("Error showing welcome message:", error);
     }
+
+    analyticsTracking(profileData.link, null, "active");
+  } catch (error) {
+    console.error("Profile rendering error:", error);
+    showError("Error displaying profile");
+  }
 }
+
 function renderSocialLinks(links) {
   if (!links || typeof links !== "string") return "";
 
-  // Map of domains to their corresponding Font Awesome icons
   const platformIcons = {
     "facebook.com": "fab fa-facebook",
     "fb.com": "fab fa-facebook",
@@ -293,31 +272,23 @@ function renderSocialLinks(links) {
     "quora.com": "fab fa-quora",
   };
 
+  // FIX 2: Split by comma to match the free plan and the shared sheet format
   const validLinks = links
     .split("\n")
     .map((link) => {
       link = link.trim();
       if (!link) return null;
-
       try {
-        // Ensure URL has protocol
         if (!/^https?:\/\//i.test(link)) link = "https://" + link;
         const url = new URL(link);
         const domain = url.hostname.replace(/^www\./, "");
-
-        // Check if domain is in our platform icons
-        const iconClass = Object.keys(platformIcons).find((key) =>
+        const matchedKey = Object.keys(platformIcons).find((key) =>
           domain.includes(key)
-        )
-          ? platformIcons[
-              Object.keys(platformIcons).find((key) => domain.includes(key))
-            ]
-          : "fas fa-link";
-
+        );
         return {
           href: url.href,
           display: domain,
-          icon: iconClass,
+          icon: matchedKey ? platformIcons[matchedKey] : "fas fa-link",
         };
       } catch (e) {
         return null;
@@ -328,64 +299,57 @@ function renderSocialLinks(links) {
   if (!validLinks.length) return "";
 
   return `
-        <div class="social-links">
-            ${validLinks
-              .map(
-                (link) => `
-                <a href="${escapeHtml(
-                  link.href
-                )}" target="_blank" rel="noopener noreferrer" class="flex items-center gap-3 p-3 hover:bg-gray-700 rounded-lg transition-colors">
-                    <i class="${link.icon} text-lg"></i>
-                    <span>${escapeHtml(link.display)}</span>
-                </a>
-            `
-              )
-              .join("")}
-        </div>
-    `;
+    <div class="social-links">
+      ${validLinks
+        .map(
+          (link) => `
+        <a href="${escapeHtml(link.href)}" target="_blank" rel="noopener noreferrer" class="flex items-center gap-3 p-3 hover:bg-gray-700 rounded-lg transition-colors">
+          <i class="${link.icon} text-lg"></i>
+          <span>${escapeHtml(link.display)}</span>
+        </a>
+      `
+        )
+        .join("")}
+    </div>
+  `;
 }
+
 async function showContactDetails(contact) {
   try {
     if (!contact || typeof contact !== "object") {
       throw new Error("Invalid contact data");
     }
 
-        const contactHtml = `
-            <div class="contact-details-container">
-                <div class="contact-header" style="display: flex; align-items: center; gap: 1rem; justify-content: center;">
-                    <img src="${escapeHtml(contact.profilepic)}" class="profile-picture" alt="${escapeHtml(contact.name)}" onerror="this.src='https://tccards.tn/Assets/default.png'" style="width: 60px; height: 60px; border-radius: 50%;">
-                    <h3 style="margin: 0;">${escapeHtml(contact.name)}</h3>
-                </div>
-            <div class="contact-table">
-                ${contact.email ? `
-                <div class="contact-row">
-                    <div class="contact-icon"><i class="fas fa-envelope"></i></div>
-                    <div class="contact-info">
-                    <a href="mailto:${escapeHtml(contact.email)}" class="contact-link">${escapeHtml(contact.email)}</a>
-                    </div>
-                </div>` : ''}
-                ${contact.phone ? `
-                <div class="contact-row">
-                    <div class="contact-icon"><i class="fas fa-phone"></i></div>
-                    <div class="contact-info">
-                    <a href="tel:${escapeHtml(contact.phone)}" class="contact-link">${escapeHtml(contact.phone)}</a>
-                    </div>
-                </div>` : ''}
-                ${contact.address ? `
-                <div class="contact-row">
-                    <div class="contact-icon"><i class="fas fa-map-marker-alt"></i></div>
-                    <div class="contact-info">
-                    <a href="https://maps.google.com/?q=${encodeURIComponent(contact.address)}" target="_blank" class="contact-link">${escapeHtml(contact.address)}</a>
-                    </div>
-                </div>` : ''}
-            </div>
-            </div>
-        `;
+    const contactHtml = `
+      <div class="contact-details-container">
+        <div class="contact-header" style="display: flex; align-items: center; gap: 1rem; justify-content: center;">
+          <img src="${escapeHtml(contact.profilepic)}" class="profile-picture" alt="${escapeHtml(contact.name)}" onerror="this.src='https://tccards.tn/Assets/default.png'" style="width: 60px; height: 60px; border-radius: 50%;">
+          <h3 style="margin: 0;">${escapeHtml(contact.name)}</h3>
+        </div>
+        <div class="contact-table">
+          ${contact.email ? `
+          <div class="contact-row">
+            <div class="contact-icon"><i class="fas fa-envelope"></i></div>
+            <div class="contact-info"><a href="mailto:${escapeHtml(contact.email)}" class="contact-link">${escapeHtml(contact.email)}</a></div>
+          </div>` : ""}
+          ${contact.phone ? `
+          <div class="contact-row">
+            <div class="contact-icon"><i class="fas fa-phone"></i></div>
+            <div class="contact-info"><a href="tel:${escapeHtml(contact.phone)}" class="contact-link">${escapeHtml(contact.phone)}</a></div>
+          </div>` : ""}
+          ${contact.address ? `
+          <div class="contact-row">
+            <div class="contact-icon"><i class="fas fa-map-marker-alt"></i></div>
+            <div class="contact-info"><a href="https://maps.google.com/?q=${encodeURIComponent(contact.address)}" target="_blank" class="contact-link">${escapeHtml(contact.address)}</a></div>
+          </div>` : ""}
+        </div>
+      </div>
+    `;
 
     const result = await Swal.fire({
       title: "Contact Details",
       html: contactHtml,
-      background:"#162949",
+      background: "#162949",
       confirmButtonText: "Copy Details",
       showCancelButton: true,
       cancelButtonText: "Close",
@@ -457,55 +421,56 @@ function escapeHtml(unsafe) {
 function showError(message) {
   const container = document.querySelector(".card-container") || document.body;
   container.innerHTML = `
-        <div class="error-message">
-            <h3 class="error-title">${escapeHtml(message)}</h3>
-            <p class="error-subtext">Please check the URL or try again later.</p>
-        </div>
-    `;
-
-  // Remove loading states
+    <div class="error-message">
+      <h3 class="error-title">${escapeHtml(message)}</h3>
+      <p class="error-subtext">Please check the URL or try again later.</p>
+    </div>
+  `;
   document.body.classList.remove("loading");
   const existingLoader = document.querySelector(".loader");
   if (existingLoader) existingLoader.remove();
 }
 
-async function showShareOptions(link) {
-    try {
-        // Check if Web Share API is supported
-        if (navigator.share) {
-            await navigator.share({
-                title: 'Check out this profile',
-                text: 'View my digital business card',
-                url: link
-            });
-        } else {
-            // Fallback for browsers that don't support Web Share API
-            const shareHtml = `
-                <div class="share-options">
-                    <h3>Share this profile</h3>
-                    <div class="share-links">
-                        <a href="https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(link)}" target="_blank" class="share-link facebook">Facebook</a>
-                        <a href="https://twitter.com/intent/tweet?url=${encodeURIComponent(link)}" target="_blank" class="share-link twitter">Twitter</a>
-                        <a href="https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(link)}" target="_blank" class="share-link linkedin">LinkedIn</a>
-                        <a href="https://api.whatsapp.com/send?text=${encodeURIComponent(link)}" target="_blank" class="share-link whatsapp">WhatsApp</a>
-                    </div>
-                </div>
-            `;
+// Expose functions used in inline onclick attributes to the global scope.
+// ES modules do NOT put functions on window automatically, so onclick="fn()"
+// in injected HTML would throw ReferenceError without these assignments.
+window.showContactDetails = showContactDetails;
+window.showShareOptions = showShareOptions;
 
-            Swal.fire({
-                title: 'Share Profile',
-                html: shareHtml,
-                showCancelButton: true,
-                cancelButtonText: 'Close',
-                background: '#162949',
-                color: '#fff',
-                customClass: {
-                    confirmButton: 'swal-confirm-button',
-                    cancelButton: 'swal-cancel-button'
-                }
-            });
-        }
-    } catch (error) {
-        console.error('Error sharing:', error);
+async function showShareOptions(link) {
+  try {
+    if (navigator.share) {
+      await navigator.share({
+        title: "Check out this profile",
+        text: "View my digital business card",
+        url: link,
+      });
+    } else {
+      const shareHtml = `
+        <div class="share-options">
+          <h3>Share this profile</h3>
+          <div class="share-links">
+            <a href="https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(link)}" target="_blank" class="share-link facebook">Facebook</a>
+            <a href="https://twitter.com/intent/tweet?url=${encodeURIComponent(link)}" target="_blank" class="share-link twitter">Twitter</a>
+            <a href="https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(link)}" target="_blank" class="share-link linkedin">LinkedIn</a>
+            <a href="https://api.whatsapp.com/send?text=${encodeURIComponent(link)}" target="_blank" class="share-link whatsapp">WhatsApp</a>
+          </div>
+        </div>
+      `;
+      Swal.fire({
+        title: "Share Profile",
+        html: shareHtml,
+        showCancelButton: true,
+        cancelButtonText: "Close",
+        background: "#162949",
+        color: "#fff",
+        customClass: {
+          confirmButton: "swal-confirm-button",
+          cancelButton: "swal-cancel-button",
+        },
+      });
     }
+  } catch (error) {
+    console.error("Error sharing:", error);
+  }
 }

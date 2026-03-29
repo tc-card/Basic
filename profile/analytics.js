@@ -1,8 +1,6 @@
-
-
 // --- Simple, robust analytics collector for profile actions with per-device, per-action timestamp checks ---
 console.log("[analytics.js] loaded");
-const ANALYTICS_ENDPOINT = "https://script.google.com/macros/s/AKfycbwG25U8SVguyqXctxFYvCceFlseUBlrH9XeQ_6UeoxXXPMxzDBxI80AsZwULJoJNzUo/exec";
+const ANALYTICS_ENDPOINT = "https://script.google.com/macros/s/AKfycbwEd1f6mtN40Nvoa7M_g_8kB_UeiKl8QkuoUzGsikef7WSpEfBELUGKLeq5ywg6TRal/exec";
 
 let analyticsProfile = { link: null };
 let analyticsState = {
@@ -57,34 +55,37 @@ function recordVisit() {
 }
 
 function attachAnalyticsListeners() {
-  // Share button
-  const shareBtn = document.getElementById("share-button");
-  if (shareBtn) {
-    shareBtn.addEventListener("click", () => {
-      if (shouldCountAction('share', 1000)) { // 1s debounce
+  // Use a single delegated listener for all dynamic content.
+  // main.js renders buttons with inline onclick (no IDs), so we match by class:
+  //   .top-right     → share button wrapper
+  //   .contact-btn   → contact button
+  //   .social-links a → social link anchors (NOT .social-link — that class doesn't exist)
+  document.body.addEventListener("click", function(e) {
+
+    // Share: rendered as div.top-right containing the share icon
+    if (e.target.closest(".top-right")) {
+      if (shouldCountAction('share', 1000)) {
         analyticsState.shareCount++;
         saveAnalyticsState();
         sendAnalytics('share');
       }
-    });
-  }
-  // Contact button
-  const contactBtn = document.getElementById("contact-button");
-  if (contactBtn) {
-    contactBtn.addEventListener("click", () => {
+    }
+
+    // Contact: rendered as button.contact-btn
+    if (e.target.closest(".contact-btn")) {
       if (shouldCountAction('contact', 1000)) {
         analyticsState.contactCount++;
         saveAnalyticsState();
         sendAnalytics('contact');
       }
-    });
-  }
-  // Social links (event delegation for dynamic content)
-  document.body.addEventListener("click", function(e) {
-    const link = e.target.closest(".social-link");
-    if (link) {
-      const id = link.id || link.getAttribute("data-id") || link.href || 'unknown';
-      const href = link.href || '';
+    }
+
+    // Social links: <a> tags inside div.social-links
+    const socialLink = e.target.closest(".social-links a");
+    if (socialLink) {
+      const href = socialLink.href || 'unknown';
+      let id = href;
+      try { id = new URL(href).hostname; } catch(_) {}
       if (!analyticsState.socialCounts[id]) analyticsState.socialCounts[id] = 0;
       if (shouldCountAction('social_' + id, 1000)) {
         analyticsState.socialCounts[id]++;
@@ -93,7 +94,8 @@ function attachAnalyticsListeners() {
       }
     }
   });
-  // Copy action (global function)
+
+  // Copy action exposed globally so copyContactDetails in main.js can call it
   window.trackCopyAction = (success) => {
     if (success && shouldCountAction('copy', 1000)) {
       analyticsState.copyCount++;
@@ -113,12 +115,16 @@ function sendAnalytics(action, detail = null) {
       link: analyticsProfile.link
     }
   };
+  // Apps Script does not send CORS headers on POST responses, so the browser
+  // blocks any POST with Content-Type: application/json (triggers a preflight
+  // that Apps Script cannot respond to). Using mode:'no-cors' with the simple
+  // Content-Type 'text/plain' skips the preflight while still delivering the
+  // full JSON body to e.postData.contents in doPost().
   fetch(ANALYTICS_ENDPOINT, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    mode: 'no-cors',
+    headers: { 'Content-Type': 'text/plain' },
     body: JSON.stringify(payload)
-  }).then(res => {
-    if (!res.ok) throw new Error('Network error');
   }).catch(() => {
     queueAnalytics(payload);
   });
@@ -137,10 +143,9 @@ function flushAnalyticsQueue() {
   queue.forEach(item => {
     fetch(ANALYTICS_ENDPOINT, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain' },
       body: JSON.stringify(item)
-    }).then(res => {
-      if (!res.ok) newQueue.push(item);
     }).catch(() => {
       newQueue.push(item);
     });
