@@ -1,4 +1,4 @@
-// --- Simple, robust analytics collector for profile actions with per-device, per-action timestamp checks ---
+// --- Analytics collector — uses GET requests to avoid CORS issues with Apps Script ---
 console.log("[analytics.js] loaded");
 const ANALYTICS_ENDPOINT = "https://script.google.com/macros/s/AKfycbxirocJmI2t2k6Y4-zh7WLF8pcI2FPDCJafyqsRKF8lc2sjL7v0--JTFA7vJrfjDytz/exec";
 
@@ -10,7 +10,7 @@ let analyticsState = {
   copyCount: 0,
   socialCounts: {},
   lastVisit: 0,
-  lastActionTimestamps: {} // { actionType: timestamp }
+  lastActionTimestamps: {}
 };
 
 function analyticsTracking(link, _email, status) {
@@ -46,7 +46,6 @@ function shouldCountAction(actionType, minIntervalMs = 0) {
 }
 
 function recordVisit() {
-  // Only count a visit if 30min have passed since last for this profile on this device
   if (shouldCountAction('visit', 30 * 60 * 1000)) {
     analyticsState.totalVisits++;
     saveAnalyticsState();
@@ -55,14 +54,8 @@ function recordVisit() {
 }
 
 function attachAnalyticsListeners() {
-  // Use a single delegated listener for all dynamic content.
-  // main.js renders buttons with inline onclick (no IDs), so we match by class:
-  //   .top-right     → share button wrapper
-  //   .contact-btn   → contact button
-  //   .social-links a → social link anchors (NOT .social-link — that class doesn't exist)
   document.body.addEventListener("click", function(e) {
-
-    // Share: rendered as div.top-right containing the share icon
+    // Share button
     if (e.target.closest(".top-right")) {
       if (shouldCountAction('share', 1000)) {
         analyticsState.shareCount++;
@@ -70,8 +63,7 @@ function attachAnalyticsListeners() {
         sendAnalytics('share');
       }
     }
-
-    // Contact: rendered as button.contact-btn
+    // Contact button
     if (e.target.closest(".contact-btn")) {
       if (shouldCountAction('contact', 1000)) {
         analyticsState.contactCount++;
@@ -79,8 +71,7 @@ function attachAnalyticsListeners() {
         sendAnalytics('contact');
       }
     }
-
-    // Social links: <a> tags inside div.social-links
+    // Social links
     const socialLink = e.target.closest(".social-links a");
     if (socialLink) {
       const href = socialLink.href || 'unknown';
@@ -95,7 +86,6 @@ function attachAnalyticsListeners() {
     }
   });
 
-  // Copy action exposed globally so copyContactDetails in main.js can call it
   window.trackCopyAction = (success) => {
     if (success && shouldCountAction('copy', 1000)) {
       analyticsState.copyCount++;
@@ -105,55 +95,50 @@ function attachAnalyticsListeners() {
   };
 }
 
-function sendAnalytics(action, detail = null) {
+// Sends analytics via GET — works with Apps Script CORS natively, same as profile lookups.
+// Payload is JSON-encoded and passed as a single `data` param to keep the URL clean.
+function buildUrl(action, detail) {
   const payload = {
     action,
-    detail,
-    timestamp: Date.now(),
-    fullState: {
-      ...analyticsState,
-      link: analyticsProfile.link
-    }
+    link: analyticsProfile.link,
+    detail: detail || null,
+    totalVisits: analyticsState.totalVisits,
+    shareCount: analyticsState.shareCount,
+    contactCount: analyticsState.contactCount,
+    copyCount: analyticsState.copyCount,
+    socialCounts: analyticsState.socialCounts,
+    timestamp: Date.now()
   };
-  // Apps Script does not send CORS headers on POST responses, so the browser
-  // blocks any POST with Content-Type: application/json (triggers a preflight
-  // that Apps Script cannot respond to). Using mode:'no-cors' with the simple
-  // Content-Type 'text/plain' skips the preflight while still delivering the
-  // full JSON body to e.postData.contents in doPost().
-  fetch(ANALYTICS_ENDPOINT, {
-    method: 'POST',
-    mode: 'no-cors',
-    headers: { 'Content-Type': 'text/plain' },
-    body: JSON.stringify(payload)
-  }).catch(() => {
-    queueAnalytics(payload);
-  });
+  return `${ANALYTICS_ENDPOINT}?data=${encodeURIComponent(JSON.stringify(payload))}`;
 }
 
-function queueAnalytics(payload) {
+function sendAnalytics(action, detail = null) {
+  const url = buildUrl(action, detail);
+  fetch(url)
+    .then(res => {
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return res.json();
+    })
+    .then(json => {
+      if (json.error) console.warn('[analytics] server error:', json.error);
+    })
+    .catch(() => {
+      // Queue for retry on next page load
+      queueAnalytics({ action, detail });
+    });
+}
+
+function queueAnalytics(item) {
   const queue = JSON.parse(localStorage.getItem("analyticsRetryQueue") || "[]");
-  queue.push(payload);
+  queue.push(item);
   localStorage.setItem("analyticsRetryQueue", JSON.stringify(queue));
 }
 
 function flushAnalyticsQueue() {
   const queue = JSON.parse(localStorage.getItem("analyticsRetryQueue") || "[]");
   if (!queue.length) return;
-  const newQueue = [];
-  queue.forEach(item => {
-    fetch(ANALYTICS_ENDPOINT, {
-      method: 'POST',
-      mode: 'no-cors',
-      headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify(item)
-    }).catch(() => {
-      newQueue.push(item);
-    });
-  });
-  setTimeout(() => {
-    localStorage.setItem("analyticsRetryQueue", JSON.stringify(newQueue));
-  }, 2000);
+  localStorage.removeItem("analyticsRetryQueue");
+  queue.forEach(item => sendAnalytics(item.action, item.detail));
 }
 
-// Export for use in main.js
 export { analyticsTracking };
