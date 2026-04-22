@@ -117,7 +117,6 @@ function handleProfileData(data, plan) {
     showError("This profile is currently inactive");
     return;
   }
-  
 
   try {
     const container = document.querySelector(".card-container");
@@ -135,6 +134,9 @@ function handleProfileData(data, plan) {
       phone: data.Phone || "",
       address: data.Address || "",
     };
+
+    // FIX: Update meta tags dynamically so social/search previews reflect the real profile
+    updateMetaTags(profileData);
 
     // Apply background style if available
     if (data["Selected Style"]) {
@@ -170,7 +172,8 @@ function handleProfileData(data, plan) {
         <div class="flex flex-col items-center">
           <img src="${escapeHtml(profileData.profilePic)}" class="w-32 h-32 bg-gray-800 rounded-full mb-4 profile-picture" alt="${escapeHtml(profileData.name)}'s profile">
           <div class="w-full h-12 bg-gray-800 rounded mb-2 flex items-center justify-center">
-            <h1 class="text-xl text-2xl font-bold text-white">${escapeHtml(profileData.name)}</h1>
+            <!-- FIX: Removed duplicate "text-xl text-2xl" — keep only text-2xl -->
+            <h1 class="text-2xl font-bold text-white">${escapeHtml(profileData.name)}</h1>
           </div>
           ${profileData.tagline ? `<div class="w-full h-full bg-gray-800 rounded mb-4 flex items-center justify-center"><p class="text-gray-300">${escapeHtml(profileData.tagline)}</p></div>` : ""}
           <div class="w-full bg-transparent mb-4">
@@ -211,19 +214,59 @@ function handleProfileData(data, plan) {
       </div>
     `;
 
-    try {
-      if (typeof Swal !== "undefined" && profileData) {
-        console.log("Profile found and loaded");
-      }
-    } catch (error) {
-      console.error("Error showing welcome message:", error);
-    }
-
+    console.log("Profile found and loaded");
     analyticsTracking(profileData.link, null, "active");
   } catch (error) {
     console.error("Profile rendering error:", error);
     showError("Error displaying profile");
   }
+}
+
+/**
+ * FIX: Dynamically update all SEO meta tags once we have real profile data.
+ * This makes social previews (WhatsApp, Twitter, LinkedIn, etc.) show the
+ * actual person's name, tagline, and profile picture instead of the generic defaults.
+ */
+function updateMetaTags(profileData) {
+  const profileUrl = `https://card.tccards.tn/@${profileData.link}`;
+  const title = `${profileData.name} | Total Connect NFC`;
+  const description = profileData.tagline
+    ? `${profileData.tagline} — View ${profileData.name}'s digital business card.`
+    : `View and save ${profileData.name}'s digital business card, powered by Total Connect NFC.`;
+  const image = profileData.profilePic || "https://tccards.tn/Assets/150.png";
+
+  // Page title
+  document.title = title;
+
+  // Helper to set or create a meta tag
+  const setMeta = (selector, attr, value) => {
+    let el = document.querySelector(selector);
+    if (!el) {
+      el = document.createElement("meta");
+      const [attrName, attrValue] = selector.replace("meta[", "").replace("]", "").split('="');
+      el.setAttribute(attrName.trim(), attrValue.replace(/"/g, ""));
+      document.head.appendChild(el);
+    }
+    el.setAttribute(attr, value);
+  };
+
+  // Standard
+  setMeta('meta[name="description"]', "content", description);
+
+  // Canonical
+  let canonical = document.querySelector('link[rel="canonical"]');
+  if (canonical) canonical.href = profileUrl;
+
+  // Open Graph
+  setMeta('meta[property="og:title"]', "content", title);
+  setMeta('meta[property="og:description"]', "content", description);
+  setMeta('meta[property="og:image"]', "content", image);
+  setMeta('meta[property="og:url"]', "content", profileUrl);
+
+  // Twitter
+  setMeta('meta[name="twitter:title"]', "content", title);
+  setMeta('meta[name="twitter:description"]', "content", description);
+  setMeta('meta[name="twitter:image"]', "content", image);
 }
 
 function renderSocialLinks(links) {
@@ -272,7 +315,6 @@ function renderSocialLinks(links) {
     "quora.com": "fab fa-quora",
   };
 
-  // FIX 2: Split by comma to match the free plan and the shared sheet format
   const validLinks = links
     .split("\n")
     .map((link) => {
@@ -346,6 +388,9 @@ async function showContactDetails(contact) {
       </div>
     `;
 
+    // FIX: Added preConfirm so showLoaderOnConfirm works correctly (SweetAlert2 warning).
+    // preConfirm handles the clipboard write; the modal closes on success or shows
+    // a validation error if clipboard access is denied.
     const result = await Swal.fire({
       title: "Contact Details",
       html: contactHtml,
@@ -355,6 +400,23 @@ async function showContactDetails(contact) {
       cancelButtonText: "Close",
       color: "#fff",
       showLoaderOnConfirm: true,
+      preConfirm: async () => {
+        try {
+          const contactText = [
+            contact.name,
+            contact.email && `Email: ${contact.email}`,
+            contact.phone && `Phone: ${contact.phone}`,
+            contact.address && `Address: ${contact.address}`,
+          ]
+            .filter(Boolean)
+            .join("\n");
+          await navigator.clipboard.writeText(contactText);
+          return true;
+        } catch (err) {
+          Swal.showValidationMessage("Could not copy — please allow clipboard access.");
+          return false;
+        }
+      },
       allowOutsideClick: false,
       customClass: {
         confirmButton: "swal-confirm-button",
@@ -362,8 +424,18 @@ async function showContactDetails(contact) {
       },
     });
 
-    if (result.isConfirmed) {
-      await copyContactDetails(contact);
+    if (result.isConfirmed && result.value) {
+      await Swal.fire({
+        icon: "success",
+        title: "Copied!",
+        toast: true,
+        position: "center",
+        showConfirmButton: false,
+        timer: 2000,
+        timerProgressBar: true,
+        background: "#1a1a1a",
+        color: "#fff",
+      });
     }
   } catch (error) {
     console.error("Error in showContactDetails:", error);
@@ -374,35 +446,6 @@ async function showContactDetails(contact) {
       background: "#1a1a1a",
       color: "#fff",
     });
-  }
-}
-
-async function copyContactDetails(contact) {
-  try {
-    const contactText = [
-      contact.name,
-      contact.email && `Email: ${contact.email}`,
-      contact.phone && `Phone: ${contact.phone}`,
-      contact.address && `Address: ${contact.address}`,
-    ]
-      .filter(Boolean)
-      .join("\n");
-
-    await navigator.clipboard.writeText(contactText);
-    await Swal.fire({
-      icon: "success",
-      title: "Copied!",
-      toast: true,
-      position: "center",
-      showConfirmButton: false,
-      timer: 2000,
-      timerProgressBar: true,
-      background: "#1a1a1a",
-      color: "#fff",
-    });
-  } catch (error) {
-    console.error("Copy failed:", error);
-    throw new Error("Failed to copy contact details");
   }
 }
 
