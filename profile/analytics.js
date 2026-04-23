@@ -1,6 +1,11 @@
 // --- Analytics collector — uses GET requests to avoid CORS issues with Apps Script ---
 console.log("[analytics.js] loaded");
-const ANALYTICS_ENDPOINT = "https://script.google.com/macros/s/AKfycbx3skTxjuljxRmh9oFCNYuuoHhqEeNfDCjU9_bOr48DXohRLwM3UwgNSS2a36OXrnax/exec";
+const PRIMARY_ANALYTICS_ENDPOINT = "https://script.google.com/macros/s/AKfycbx3skTxjuljxRmh9oFCNYuuoHhqEeNfDCjU9_bOr48DXohRLwM3UwgNSS2a36OXrnax/exec";
+const ANALYTICS_ENDPOINT_CACHE_KEY = "analyticsEndpoint";
+
+let analyticsEndpoint = PRIMARY_ANALYTICS_ENDPOINT;
+let endpointReadyPromise = null;
+let listenersAttached = false;
 
 let analyticsProfile = { link: null };
 let analyticsState = {
@@ -18,9 +23,46 @@ function analyticsTracking(link, _email, status) {
   if (status !== "active") return;
   analyticsProfile = { link };
   loadAnalyticsState();
-  recordVisit();
-  attachAnalyticsListeners();
-  flushAnalyticsQueue();
+
+  if (!endpointReadyPromise) {
+    endpointReadyPromise = resolveActiveEndpoint();
+  }
+
+  endpointReadyPromise.finally(() => {
+    recordVisit();
+    attachAnalyticsListeners();
+    flushAnalyticsQueue();
+  });
+}
+
+async function resolveActiveEndpoint() {
+  const cachedEndpoint = localStorage.getItem(ANALYTICS_ENDPOINT_CACHE_KEY);
+  const candidates = [cachedEndpoint, PRIMARY_ANALYTICS_ENDPOINT].filter(
+    (endpoint, index, list) => endpoint && list.indexOf(endpoint) === index
+  );
+
+  for (const endpoint of candidates) {
+    try {
+      const response = await fetch(`${endpoint}?action=test&_=${Date.now()}`, {
+        cache: "no-store",
+      });
+
+      if (!response.ok) continue;
+      const result = await response.json();
+
+      if (result?.status === "active" || !result?.error) {
+        analyticsEndpoint = endpoint;
+        localStorage.setItem(ANALYTICS_ENDPOINT_CACHE_KEY, endpoint);
+        return endpoint;
+      }
+    } catch (_) {
+      // Try the next candidate endpoint.
+    }
+  }
+
+  analyticsEndpoint = PRIMARY_ANALYTICS_ENDPOINT;
+  localStorage.setItem(ANALYTICS_ENDPOINT_CACHE_KEY, analyticsEndpoint);
+  return analyticsEndpoint;
 }
 
 function loadAnalyticsState() {
@@ -54,6 +96,9 @@ function recordVisit() {
 }
 
 function attachAnalyticsListeners() {
+  if (listenersAttached) return;
+  listenersAttached = true;
+
   document.body.addEventListener("click", function(e) {
     // Share button
     if (e.target.closest(".top-right")) {
@@ -109,7 +154,7 @@ function buildUrl(action, detail) {
     socialCounts: analyticsState.socialCounts,
     timestamp: Date.now()
   };
-  return `${ANALYTICS_ENDPOINT}?data=${encodeURIComponent(JSON.stringify(payload))}`;
+  return `${analyticsEndpoint}?data=${encodeURIComponent(JSON.stringify(payload))}`;
 }
 
 function sendAnalytics(action, detail = null) {
@@ -120,9 +165,16 @@ function sendAnalytics(action, detail = null) {
       return res.json();
     })
     .then(json => {
-      if (json.error) console.warn('[analytics] server error:', json.error);
+      if (json.error) {
+        console.warn('[analytics] server error:', json.error);
+        throw new Error(json.error);
+      }
     })
-    .catch(() => {
+    .catch((error) => {
+      if (/endpoint not found/i.test(String(error?.message || error))) {
+        endpointReadyPromise = resolveActiveEndpoint();
+      }
+
       // Queue for retry on next page load
       queueAnalytics({ action, detail });
     });
