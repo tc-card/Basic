@@ -1,6 +1,6 @@
 // --- Analytics collector — uses GET requests to avoid CORS issues with Apps Script ---
 console.log("[analytics.js] loaded");
-const PRIMARY_ANALYTICS_ENDPOINT = "https://script.google.com/macros/s/AKfycbx3skTxjuljxRmh9oFCNYuuoHhqEeNfDCjU9_bOr48DXohRLwM3UwgNSS2a36OXrnax/exec";
+const PRIMARY_ANALYTICS_ENDPOINT = "https://script.google.com/macros/s/AKfycbw1vRftRl6qed7xqT9FwulFrpLD6jDlJyfhYYLiX9gL8ydAP-mgA71re8EF6HL8wXM6/exec";
 const ANALYTICS_ENDPOINT_CACHE_KEY = "analyticsEndpoint";
 
 let analyticsEndpoint = PRIMARY_ANALYTICS_ENDPOINT;
