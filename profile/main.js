@@ -201,7 +201,7 @@ function handleProfileData(data, plan) {
             </div>
             <div class="w-1/2 mx-auto py-2 rounded-lg bg-gray-900">
               <a href="https://plans.tccards.tn" target="_blank" class="text-emerald-400 hover:text-emerald-300 text-sm font-medium transition-colors">
-                Upgrade your Card
+                Get your Card
               </a>
             </div>
           </footer>
@@ -266,49 +266,6 @@ function updateMetaTags(profileData) {
 function renderSocialLinks(links) {
   if (!links || typeof links !== "string") return "";
 
-  const platformIcons = {
-    "facebook.com": "fab fa-facebook",
-    "fb.com": "fab fa-facebook",
-    "fb.me": "fab fa-facebook",
-    "messenger.com": "fab fa-facebook-messenger",
-    "m.me": "fab fa-facebook-messenger",
-    "twitter.com": "fab fa-twitter",
-    "x.com": "fab fa-x-twitter",
-    "instagram.com": "fab fa-instagram",
-    "linkedin.com": "fab fa-linkedin",
-    "youtube.com": "fab fa-youtube",
-    "tiktok.com": "fab fa-tiktok",
-    "pinterest.com": "fab fa-pinterest",
-    "snapchat.com": "fab fa-snapchat",
-    "reddit.com": "fab fa-reddit",
-    "discord.com": "fab fa-discord",
-    "twitch.tv": "fab fa-twitch",
-    "github.com": "fab fa-github",
-    "discord.gg": "fab fa-discord",
-    "cal.com": "fas fa-calendar-alt",
-    "calendly.com": "fas fa-calendar-alt",
-    "linktree.com": "fas fa-link",
-    "linktr.ee": "fas fa-link",
-    "tccards.tn": "fas fa-id-card",
-    "medium.com": "fab fa-medium",
-    "whatsapp.com": "fab fa-whatsapp",
-    "wa.me": "fab fa-whatsapp",
-    "dribbble.com": "fab fa-dribbble",
-    "behance.net": "fab fa-behance",
-    "telegram.org": "fab fa-telegram",
-    "t.me": "fab fa-telegram",
-    "vimeo.com": "fab fa-vimeo",
-    "spotify.com": "fab fa-spotify",
-    "apple.com": "fab fa-apple",
-    "google.com": "fab fa-google",
-    "youtube-nocookie.com": "fab fa-youtube",
-    "soundcloud.com": "fab fa-soundcloud",
-    "paypal.com": "fab fa-paypal",
-    "github.io": "fab fa-github",
-    "stackoverflow.com": "fab fa-stack-overflow",
-    "quora.com": "fab fa-quora",
-  };
-
   const validLinks = links
     .split("\n")
     .map((link) => {
@@ -318,13 +275,10 @@ function renderSocialLinks(links) {
         if (!/^https?:\/\//i.test(link)) link = "https://" + link;
         const url = new URL(link);
         const domain = url.hostname.replace(/^www\./, "");
-        const matchedKey = Object.keys(platformIcons).find((key) =>
-          domain.includes(key)
-        );
         return {
           href: url.href,
           display: domain,
-          icon: matchedKey ? platformIcons[matchedKey] : "fas fa-link",
+          domain: domain,
         };
       } catch (e) {
         return null;
@@ -339,8 +293,16 @@ function renderSocialLinks(links) {
       ${validLinks
         .map(
           (link) => `
-        <a href="${escapeHtml(link.href)}" target="_blank" rel="noopener noreferrer" class="flex items-center gap-3 p-3 hover:bg-gray-700 rounded-lg transition-colors">
-          <i class="${link.icon} text-lg"></i>
+        <a href="${escapeHtml(link.href)}" target="_blank" rel="noopener noreferrer" class="social-link-item">
+          <!-- Primary favicon (DuckDuckGo is usually the most reliable) -->
+          <img 
+            src="https://icons.duckduckgo.com/ip3/${encodeURIComponent(link.domain)}.ico" 
+            alt=""
+            class="social-icon"
+            onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-flex';"
+          />
+          <!-- Fallback icon (Font Awesome 'link' icon) -->
+          <i class="fas fa-link social-icon-fallback" style="display:none;"></i>
           <span>${escapeHtml(link.display)}</span>
         </a>
       `
@@ -350,95 +312,173 @@ function renderSocialLinks(links) {
   `;
 }
 
+function generateVCard(contact) {
+  const fullName = contact.name || 'Contact';
+  const email = contact.email || '';
+  const phone = contact.phone || '';
+  const address = contact.address || '';
+  // vCard version 3.0
+  let vcard = 'BEGIN:VCARD\n';
+  vcard += 'VERSION:3.0\n';
+  vcard += `FN:${fullName}\n`;
+  vcard += `N:${fullName};;;\n`;
+  if (email) vcard += `EMAIL:${email}\n`;
+  if (phone) vcard += `TEL:${phone}\n`;
+  if (address) vcard += `ADR:;;${address};;;\n`;
+  vcard += 'END:VCARD';
+  return vcard;
+}
+
+function downloadVCard(vcardString, filename = 'contact.vcf') {
+  const blob = new Blob([vcardString], { type: 'text/vcard;charset=utf-8' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(link.href);
+}
+
+async function copyContactDetails(contact) {
+  const lines = [
+    contact.name,
+    contact.email && `Email: ${contact.email}`,
+    contact.phone && `Phone: ${contact.phone}`,
+    contact.address && `Address: ${contact.address}`,
+  ].filter(Boolean);
+  const text = lines.join('\n');
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 async function showContactDetails(contact) {
   try {
-    if (!contact || typeof contact !== "object") {
-      throw new Error("Invalid contact data");
+    if (!contact || typeof contact !== 'object') {
+      throw new Error('Invalid contact data');
     }
 
+    // Build the contact HTML (design improved)
     const contactHtml = `
-      <div class="contact-details-container">
-        <div class="contact-header" style="display: flex; align-items: center; gap: 1rem; justify-content: center;">
-          <img src="${escapeHtml(contact.profilepic)}" class="profile-picture" alt="${escapeHtml(contact.name)}" onerror="this.src='https://tccards.tn/Assets/default.png'" style="width: 60px; height: 60px; border-radius: 50%;">
-          <h3 style="margin: 0;">${escapeHtml(contact.name)}</h3>
+      <div class="contact-card">
+        <div class="contact-avatar">
+          <img src="${escapeHtml(contact.profilepic)}" 
+               alt="${escapeHtml(contact.name)}" 
+               onerror="this.src='https://tccards.tn/Assets/default.png'">
         </div>
-        <div class="contact-table">
+        <h3 class="contact-name">${escapeHtml(contact.name)}</h3>
+        <div class="contact-detail-list">
           ${contact.email ? `
-          <div class="contact-row">
-            <div class="contact-icon"><i class="fas fa-envelope"></i></div>
-            <div class="contact-info"><a href="mailto:${escapeHtml(contact.email)}" class="contact-link">${escapeHtml(contact.email)}</a></div>
-          </div>` : ""}
+            <div class="contact-detail-item">
+              <i class="fas fa-envelope"></i>
+              <a href="mailto:${escapeHtml(contact.email)}">${escapeHtml(contact.email)}</a>
+            </div>` : ''}
           ${contact.phone ? `
-          <div class="contact-row">
-            <div class="contact-icon"><i class="fas fa-phone"></i></div>
-            <div class="contact-info"><a href="tel:${escapeHtml(contact.phone)}" class="contact-link">${escapeHtml(contact.phone)}</a></div>
-          </div>` : ""}
+            <div class="contact-detail-item">
+              <i class="fas fa-phone"></i>
+              <a href="tel:${escapeHtml(contact.phone)}">${escapeHtml(contact.phone)}</a>
+            </div>` : ''}
           ${contact.address ? `
-          <div class="contact-row">
-            <div class="contact-icon"><i class="fas fa-map-marker-alt"></i></div>
-            <div class="contact-info"><a href="https://maps.google.com/?q=${encodeURIComponent(contact.address)}" target="_blank" class="contact-link">${escapeHtml(contact.address)}</a></div>
-          </div>` : ""}
+            <div class="contact-detail-item">
+              <i class="fas fa-map-marker-alt"></i>
+              <a href="https://maps.google.com/?q=${encodeURIComponent(contact.address)}" target="_blank">${escapeHtml(contact.address)}</a>
+            </div>` : ''}
+        </div>
+        <div class="contact-actions">
+          <button class="copy-details-btn" id="copyDetailsBtn">
+            <i class="fas fa-copy"></i> Copy Details
+          </button>
         </div>
       </div>
     `;
 
-    // FIX: Added preConfirm so showLoaderOnConfirm works correctly (SweetAlert2 warning).
-    // preConfirm handles the clipboard write; the modal closes on success or shows
-    // a validation error if clipboard access is denied.
+    // SweetAlert2 configuration
     const result = await Swal.fire({
-      title: "Contact Details",
+      title: 'Contact Details',
       html: contactHtml,
-      background: "#162949",
-      confirmButtonText: "Copy Details",
-      showCancelButton: true,
-      cancelButtonText: "Close",
-      color: "#fff",
+      background: '#1a2332',
+      color: '#fff',
+      confirmButtonText: '💾 Save Contact',
+      confirmButtonColor: '#2563eb',
+      showCloseButton: true,
+      closeButtonHtml: '✕',
+      showCancelButton: false,
       showLoaderOnConfirm: true,
       preConfirm: async () => {
+        // When "Save Contact" is clicked, generate and download vCard
         try {
-          const contactText = [
-            contact.name,
-            contact.email && `Email: ${contact.email}`,
-            contact.phone && `Phone: ${contact.phone}`,
-            contact.address && `Address: ${contact.address}`,
-          ]
-            .filter(Boolean)
-            .join("\n");
-          await navigator.clipboard.writeText(contactText);
+          const vcard = generateVCard(contact);
+          downloadVCard(vcard, `${contact.name || 'contact'}.vcf`);
           return true;
         } catch (err) {
-          Swal.showValidationMessage("Could not copy — please allow clipboard access.");
+          Swal.showValidationMessage('Could not save contact. Please try again.');
           return false;
         }
       },
       allowOutsideClick: false,
       customClass: {
-        confirmButton: "swal-confirm-button",
-        cancelButton: "swal-cancel-button",
+        confirmButton: 'swal-confirm-button',
+        closeButton: 'swal-close-button-custom',
+        popup: 'swal-popup-custom',
+      },
+      didOpen: (modal) => {
+        // Attach copy handler to the custom "Copy Details" button
+        const copyBtn = modal.querySelector('#copyDetailsBtn');
+        if (copyBtn) {
+          copyBtn.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            const copied = await copyContactDetails(contact);
+            if (copied) {
+              Swal.fire({
+                icon: 'success',
+                title: 'Copied!',
+                toast: true,
+                position: 'center',
+                showConfirmButton: false,
+                timer: 1500,
+                timerProgressBar: true,
+                background: '#1a1a1a',
+                color: '#fff',
+              });
+            } else {
+              Swal.fire({
+                icon: 'error',
+                title: 'Copy failed',
+                text: 'Please allow clipboard access.',
+                toast: true,
+                position: 'center',
+                showConfirmButton: false,
+                timer: 2000,
+              });
+            }
+          });
+        }
       },
     });
 
+    // After the modal closes (or if save succeeded)
     if (result.isConfirmed && result.value) {
       await Swal.fire({
-        icon: "success",
-        title: "Copied!",
-        toast: true,
-        position: "center",
-        showConfirmButton: false,
-        timer: 2000,
-        timerProgressBar: true,
-        background: "#1a1a1a",
-        color: "#fff",
+        icon: 'success',
+        title: 'Contact Saved!',
+        text: 'The vCard file has been downloaded. Open it to add to your contacts.',
+        background: '#1a1a1a',
+        color: '#fff',
+        confirmButtonColor: '#2563eb',
       });
     }
   } catch (error) {
-    console.error("Error in showContactDetails:", error);
+    console.error('Error in showContactDetails:', error);
     await Swal.fire({
-      icon: "error",
-      title: "Error",
-      text: "Could not display contact details",
-      background: "#1a1a1a",
-      color: "#fff",
+      icon: 'error',
+      title: 'Error',
+      text: 'Could not display contact details',
+      background: '#1a1a1a',
+      color: '#fff',
     });
   }
 }

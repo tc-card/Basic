@@ -82,18 +82,40 @@ body {
     flex-direction: column;
     gap: 10px;
 }
-
 .social-links a {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    background: rgba(255, 255, 255, 0.1);
-    padding: 12px;
-    border-radius: 8px;
-    color: white;
-    text-decoration: none;
-    font-size: 16px;
-    transition: background 0.3s;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 12px 16px;
+  border-radius: 8px;
+  color: white;
+  text-decoration: none;
+  font-size: 16px;
+  transition: transform 0.2s ease, background 0.3s ease, box-shadow 0.2s ease;
+  will-change: transform;
+}
+
+.social-links a:hover {
+  background: rgba(255, 255, 255, 0.18);
+  transform: scale(1.02) translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.social-icon {
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  flex-shrink: 0;
+  object-fit: contain;
+}
+
+.social-icon-fallback {
+  font-size: 1.2rem;
+  width: 24px;
+  text-align: center;
+  flex-shrink: 0;
+  color: rgba(255, 255, 255, 0.7);
 }
 
 /* Get in Touch Button */
