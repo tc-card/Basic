@@ -1,5 +1,3 @@
-import { analyticsTracking } from "./analytics.js";
-
 const CONFIG = {
   defaultBg: "url(https://tccards.tn/Assets/background.png) center fixed",
   defaultProfilePic: "https://tccards.tn/Assets/default.png",
@@ -140,26 +138,23 @@ function handleProfileData(data, plan) {
 
     // Apply background style if available
     if (data["Selected Style"]) {
-      const selectedStyle = data["Selected Style"];
-      if (selectedStyle.startsWith("linear-gradient")) {
-        document.body.style.background = selectedStyle;
-      } else {
-        const styles = {
-          corporateGradient: {
-            background:
-              "linear-gradient(145deg, rgb(9, 9, 11), rgb(24, 24, 27), rgb(9, 9, 11))",
-          },
-          oceanGradient: {
-            background:
-              "linear-gradient(145deg, rgb(2, 6, 23), rgb(15, 23, 42), rgb(2, 6, 23))",
-          },
-          default:
-            "url(https://www.tccards.tn/Assets/background.png) center fixed",
-        };
-        document.body.style.background =
-          styles[data["Selected Style"]]?.background || styles.default;
-        document.body.style.backgroundSize = "cover";
-      }
+      const selectedStyle = String(data["Selected Style"]).trim();
+      const presetBackgrounds = {
+        corporateGradient:
+          "linear-gradient(145deg, rgb(9, 9, 11), rgb(24, 24, 27), rgb(9, 9, 11))",
+        oceanGradient:
+          "linear-gradient(145deg, rgb(2, 6, 23), rgb(15, 23, 42), rgb(2, 6, 23))",
+        default: CONFIG.defaultBg,
+      };
+
+      const backgroundStyle =
+        presetBackgrounds[selectedStyle] ||
+        (selectedStyle.includes("gradient(") || selectedStyle.startsWith("url(")
+          ? selectedStyle
+          : CONFIG.defaultBg);
+
+      document.body.style.background = backgroundStyle;
+      document.body.style.backgroundSize = backgroundStyle.startsWith("url(") ? "cover" : "auto";
     }
 
     container.innerHTML = `
@@ -215,7 +210,6 @@ function handleProfileData(data, plan) {
     `;
 
     console.log("Profile found and loaded");
-    analyticsTracking(profileData.link, null, "active");
   } catch (error) {
     console.error("Profile rendering error:", error);
     showError("Error displaying profile");
