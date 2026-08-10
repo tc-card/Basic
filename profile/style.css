@@ -66,7 +66,7 @@ body {
     width: 100%;
     height: 100%;
     background: linear-gradient(45deg, transparent 0%, rgba(255,255,255,0.10) 50%, transparent 100%);
-    animation: skeleton-hover 0.8s infinite; /* Faster frequency */
+    animation: skeleton-hover 0.8s infinite;
     pointer-events: none;
 }
 
@@ -192,78 +192,6 @@ body {
     background-color: #1e40af;
 }
 
-.contact-details-container {
-    padding: 1.5rem;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    border-radius: 12px;
-    background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(10px);
-}
-.contact-header {
-    text-align: center;
-    margin-bottom: 1.5rem;
-}
-.contact-header img {
-    width: 80px;
-    height: 80px;
-    border-radius: 50%;
-    margin-bottom: 0.5rem;
-    border: 2px solid rgba(255, 255, 255, 0.2);
-}
-.contact-header h3 {
-    font-size: 1.25rem;
-    color: #fff;
-    margin: 0.5rem 0;
-}
-.contact-table {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-}
-.contact-row {
-    display: flex;
-    align-items: center;
-    padding: 0.75rem;
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 8px;
-    transition: all 0.3s ease;
-}
-.contact-row:hover {
-    background: rgba(255, 255, 255, 0.1);
-    transform: translateX(5px);
-}
-.contact-icon {
-    flex: 0 0 40px;
-    text-align: center;
-    color: #fff;
-}
-.contact-info {
-    flex: 1;
-}
-.contact-link {
-    color: #fff;
-    text-decoration: none;
-    font-size: 0.9rem;
-    word-break: break-all;
-}
-.contact-link:hover {
-    text-decoration: underline;
-}
-
-.footer {
-    margin-top: auto;
-    padding-bottom: 20px;
-    padding-top: 15px;
-    font-size: 12px;
-    color: rgba(255, 255, 255, 0.5);
-    text-align: center;
-    position: relative;
-    bottom: 0;
-    width: 100%;
-}
-
 /* Share Options Styling */
 .share-options {
     padding: 20px;
@@ -295,7 +223,6 @@ body {
     transition: all 0.3s ease;
 }
 
-/* Social Media Colors */
 .share-link.facebook {
     background: #1877f2;
 }
@@ -312,7 +239,6 @@ body {
     background: #25d366;
 }
 
-/* Font Awesome Icons */
 .share-link::before {
     font-family: "Font Awesome 5 Brands";
     font-size: 1.2rem;
@@ -334,7 +260,6 @@ body {
     content: "\f232";
 }
 
-/* Top Right Share Button */
 .top-right {
     position: absolute;
     top: 15px;
