@@ -312,12 +312,13 @@ function renderSocialLinks(links) {
   `;
 }
 
+// ========== vCard & Contact Helpers ==========
+
 function generateVCard(contact) {
   const fullName = contact.name || 'Contact';
   const email = contact.email || '';
   const phone = contact.phone || '';
   const address = contact.address || '';
-  // vCard version 3.0
   let vcard = 'BEGIN:VCARD\n';
   vcard += 'VERSION:3.0\n';
   vcard += `FN:${fullName}\n`;
@@ -340,6 +341,29 @@ function downloadVCard(vcardString, filename = 'contact.vcf') {
   URL.revokeObjectURL(link.href);
 }
 
+async function shareVCardFile(vcardString, fileName) {
+  if (navigator.share && navigator.canShare) {
+    try {
+      const blob = new Blob([vcardString], { type: 'text/vcard;charset=utf-8' });
+      const file = new File([blob], fileName, { type: 'text/vcard' });
+      if (navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file] });
+        return true;
+      }
+    } catch (err) {
+      console.warn('Web Share failed, falling back to download:', err);
+    }
+  }
+  return false;
+}
+
+function openVCard(vcardString, fileName) {
+  const blob = new Blob([vcardString], { type: 'text/vcard;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  window.open(url, '_blank');
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
+}
+
 async function copyContactDetails(contact) {
   const lines = [
     contact.name,
@@ -356,13 +380,14 @@ async function copyContactDetails(contact) {
   }
 }
 
+// ========== Show Contact Details (updated) ==========
+
 async function showContactDetails(contact) {
   try {
     if (!contact || typeof contact !== 'object') {
       throw new Error('Invalid contact data');
     }
 
-    // Build the contact HTML (design improved)
     const contactHtml = `
       <div class="contact-card">
         <div class="contact-avatar">
@@ -396,7 +421,6 @@ async function showContactDetails(contact) {
       </div>
     `;
 
-    // SweetAlert2 configuration
     const result = await Swal.fire({
       title: 'Contact Details',
       html: contactHtml,
@@ -409,11 +433,17 @@ async function showContactDetails(contact) {
       showCancelButton: false,
       showLoaderOnConfirm: true,
       preConfirm: async () => {
-        // When "Save Contact" is clicked, generate and download vCard
         try {
           const vcard = generateVCard(contact);
-          downloadVCard(vcard, `${contact.name || 'contact'}.vcf`);
-          return true;
+          const fileName = `${contact.name || 'contact'}.vcf`;
+
+          const shared = await shareVCardFile(vcard, fileName);
+          if (shared) {
+            return { shared: true };
+          }
+
+          downloadVCard(vcard, fileName);
+          return { shared: false, vcard, fileName };
         } catch (err) {
           Swal.showValidationMessage('Could not save contact. Please try again.');
           return false;
@@ -426,7 +456,6 @@ async function showContactDetails(contact) {
         popup: 'swal-popup-custom',
       },
       didOpen: (modal) => {
-        // Attach copy handler to the custom "Copy Details" button
         const copyBtn = modal.querySelector('#copyDetailsBtn');
         if (copyBtn) {
           copyBtn.addEventListener('click', async (e) => {
@@ -460,16 +489,43 @@ async function showContactDetails(contact) {
       },
     });
 
-    // After the modal closes (or if save succeeded)
     if (result.isConfirmed && result.value) {
-      await Swal.fire({
-        icon: 'success',
-        title: 'Contact Saved!',
-        text: 'The vCard file has been downloaded. Open it to add to your contacts.',
-        background: '#1a1a1a',
-        color: '#fff',
-        confirmButtonColor: '#2563eb',
-      });
+      if (result.value.shared) {
+        await Swal.fire({
+          icon: 'success',
+          title: 'Contact Shared!',
+          text: 'Use the share sheet to add to your contacts.',
+          background: '#1a1a1a',
+          color: '#fff',
+          confirmButtonColor: '#2563eb',
+        });
+      } else {
+        const { vcard, fileName } = result.value;
+        await Swal.fire({
+          icon: 'success',
+          title: 'Contact Downloaded',
+          html: `
+            <p>The vCard file has been saved. Tap the button below to open it and add to your contacts.</p>
+            <br>
+            <button id="openContactBtn" class="swal2-confirm swal2-styled" style="background:#2563eb;border-radius:30px;padding:0.6rem 2rem;">
+              📇 Open Contact
+            </button>
+          `,
+          showConfirmButton: false,
+          showCloseButton: true,
+          background: '#1a1a1a',
+          color: '#fff',
+          didOpen: (modal) => {
+            const openBtn = modal.querySelector('#openContactBtn');
+            if (openBtn) {
+              openBtn.addEventListener('click', () => {
+                openVCard(vcard, fileName);
+                Swal.close();
+              });
+            }
+          },
+        });
+      }
     }
   } catch (error) {
     console.error('Error in showContactDetails:', error);
@@ -483,7 +539,8 @@ async function showContactDetails(contact) {
   }
 }
 
-// XSS protection
+// ========== Utility ==========
+
 function escapeHtml(unsafe) {
   if (typeof unsafe !== "string") return unsafe;
   return unsafe
@@ -494,7 +551,6 @@ function escapeHtml(unsafe) {
     .replace(/'/g, "&#039;");
 }
 
-// Error display
 function showError(message) {
   const container = document.querySelector(".card-container") || document.body;
   container.innerHTML = `
@@ -509,10 +565,10 @@ function showError(message) {
 }
 
 // Expose functions used in inline onclick attributes to the global scope.
-// ES modules do NOT put functions on window automatically, so onclick="fn()"
-// in injected HTML would throw ReferenceError without these assignments.
 window.showContactDetails = showContactDetails;
 window.showShareOptions = showShareOptions;
+
+// ========== Share Options ==========
 
 async function showShareOptions(link) {
   try {
