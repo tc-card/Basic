@@ -381,13 +381,13 @@ async function copyContactDetails(contact) {
 }
 
 // ========== Show Contact Details (updated) ==========
+// ========== Show Contact Details (final) ==========
 async function showContactDetails(contact) {
   try {
     if (!contact || typeof contact !== 'object') {
       throw new Error('Invalid contact data');
     }
 
-    // Build contact HTML – no avatar, cleaner layout
     const contactHtml = `
       <div class="contact-details">
         <h3 class="contact-name">${escapeHtml(contact.name)}</h3>
@@ -419,22 +419,21 @@ async function showContactDetails(contact) {
       </div>
     `;
 
-    // Show the modal with no built‑in confirm/cancel buttons – we control everything
-    const result = await Swal.fire({
+    await Swal.fire({
       title: 'Contact Details',
       html: contactHtml,
       background: '#1a2332',
       color: '#fff',
       showCloseButton: true,
       closeButtonHtml: '✕',
-      showConfirmButton: false,     // no built‑in confirm button
+      showConfirmButton: false,
       showCancelButton: false,
       allowOutsideClick: false,
       customClass: {
         closeButton: 'swal-close-button-custom',
         popup: 'swal-popup-custom',
       },
-      didOpen: async (modal) => {
+      didOpen: (modal) => {
         // ---- Copy Details ----
         const copyBtn = modal.querySelector('#copyDetailsBtn');
         if (copyBtn) {
@@ -490,31 +489,19 @@ async function showContactDetails(contact) {
                 return;
               }
 
-              // Fallback: download .vcf and show "Open Contact"
+              // Fallback: download .vcf and show a simple toast
               downloadVCard(vcard, fileName);
-              await Swal.fire({
+              Swal.fire({
                 icon: 'success',
-                title: 'Contact Downloaded',
-                html: `
-                  <p>The vCard file has been saved. Tap the button below to open it and add to your contacts.</p>
-                  <br>
-                  <button id="openContactBtn" class="swal2-confirm swal2-styled" style="background:#2563eb;border-radius:30px;padding:0.6rem 2rem;">
-                    📇 Open Contact
-                  </button>
-                `,
+                title: 'Contact Saved!',
+                text: 'The vCard file has been downloaded.',
+                toast: true,
+                position: 'center',
                 showConfirmButton: false,
-                showCloseButton: true,
+                timer: 2000,
+                timerProgressBar: true,
                 background: '#1a1a1a',
                 color: '#fff',
-                didOpen: (innerModal) => {
-                  const openBtn = innerModal.querySelector('#openContactBtn');
-                  if (openBtn) {
-                    openBtn.addEventListener('click', () => {
-                      openVCard(vcard, fileName);
-                      Swal.close();
-                    });
-                  }
-                },
               });
             } catch (err) {
               Swal.fire({
