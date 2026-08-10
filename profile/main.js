@@ -381,20 +381,15 @@ async function copyContactDetails(contact) {
 }
 
 // ========== Show Contact Details (updated) ==========
-
 async function showContactDetails(contact) {
   try {
     if (!contact || typeof contact !== 'object') {
       throw new Error('Invalid contact data');
     }
 
+    // Build contact HTML – no avatar, cleaner layout
     const contactHtml = `
-      <div class="contact-card">
-        <div class="contact-avatar">
-          <img src="${escapeHtml(contact.profilepic)}" 
-               alt="${escapeHtml(contact.name)}" 
-               onerror="this.src='https://tccards.tn/Assets/default.png'">
-        </div>
+      <div class="contact-details">
         <h3 class="contact-name">${escapeHtml(contact.name)}</h3>
         <div class="contact-detail-list">
           ${contact.email ? `
@@ -413,49 +408,34 @@ async function showContactDetails(contact) {
               <a href="https://maps.google.com/?q=${encodeURIComponent(contact.address)}" target="_blank">${escapeHtml(contact.address)}</a>
             </div>` : ''}
         </div>
-        <div class="contact-actions">
-          <button class="copy-details-btn" id="copyDetailsBtn">
+        <div class="contact-actions-row">
+          <button class="contact-action-btn copy-btn" id="copyDetailsBtn">
             <i class="fas fa-copy"></i> Copy Details
+          </button>
+          <button class="contact-action-btn save-btn" id="saveContactBtn">
+            <i class="fas fa-save"></i> Save Contact
           </button>
         </div>
       </div>
     `;
 
+    // Show the modal with no built‑in confirm/cancel buttons – we control everything
     const result = await Swal.fire({
       title: 'Contact Details',
       html: contactHtml,
       background: '#1a2332',
       color: '#fff',
-      confirmButtonText: '💾 Save Contact',
-      confirmButtonColor: '#2563eb',
       showCloseButton: true,
       closeButtonHtml: '✕',
+      showConfirmButton: false,     // no built‑in confirm button
       showCancelButton: false,
-      showLoaderOnConfirm: true,
-      preConfirm: async () => {
-        try {
-          const vcard = generateVCard(contact);
-          const fileName = `${contact.name || 'contact'}.vcf`;
-
-          const shared = await shareVCardFile(vcard, fileName);
-          if (shared) {
-            return { shared: true };
-          }
-
-          downloadVCard(vcard, fileName);
-          return { shared: false, vcard, fileName };
-        } catch (err) {
-          Swal.showValidationMessage('Could not save contact. Please try again.');
-          return false;
-        }
-      },
       allowOutsideClick: false,
       customClass: {
-        confirmButton: 'swal-confirm-button',
         closeButton: 'swal-close-button-custom',
         popup: 'swal-popup-custom',
       },
-      didOpen: (modal) => {
+      didOpen: async (modal) => {
+        // ---- Copy Details ----
         const copyBtn = modal.querySelector('#copyDetailsBtn');
         if (copyBtn) {
           copyBtn.addEventListener('click', async (e) => {
@@ -486,47 +466,69 @@ async function showContactDetails(contact) {
             }
           });
         }
-      },
-    });
 
-    if (result.isConfirmed && result.value) {
-      if (result.value.shared) {
-        await Swal.fire({
-          icon: 'success',
-          title: 'Contact Shared!',
-          text: 'Use the share sheet to add to your contacts.',
-          background: '#1a1a1a',
-          color: '#fff',
-          confirmButtonColor: '#2563eb',
-        });
-      } else {
-        const { vcard, fileName } = result.value;
-        await Swal.fire({
-          icon: 'success',
-          title: 'Contact Downloaded',
-          html: `
-            <p>The vCard file has been saved. Tap the button below to open it and add to your contacts.</p>
-            <br>
-            <button id="openContactBtn" class="swal2-confirm swal2-styled" style="background:#2563eb;border-radius:30px;padding:0.6rem 2rem;">
-              📇 Open Contact
-            </button>
-          `,
-          showConfirmButton: false,
-          showCloseButton: true,
-          background: '#1a1a1a',
-          color: '#fff',
-          didOpen: (modal) => {
-            const openBtn = modal.querySelector('#openContactBtn');
-            if (openBtn) {
-              openBtn.addEventListener('click', () => {
-                openVCard(vcard, fileName);
-                Swal.close();
+        // ---- Save Contact ----
+        const saveBtn = modal.querySelector('#saveContactBtn');
+        if (saveBtn) {
+          saveBtn.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            try {
+              const vcard = generateVCard(contact);
+              const fileName = `${contact.name || 'contact'}.vcf`;
+
+              // Try Web Share first
+              const shared = await shareVCardFile(vcard, fileName);
+              if (shared) {
+                Swal.fire({
+                  icon: 'success',
+                  title: 'Contact Shared!',
+                  text: 'Use the share sheet to add to your contacts.',
+                  background: '#1a1a1a',
+                  color: '#fff',
+                  confirmButtonColor: '#2563eb',
+                });
+                return;
+              }
+
+              // Fallback: download .vcf and show "Open Contact"
+              downloadVCard(vcard, fileName);
+              await Swal.fire({
+                icon: 'success',
+                title: 'Contact Downloaded',
+                html: `
+                  <p>The vCard file has been saved. Tap the button below to open it and add to your contacts.</p>
+                  <br>
+                  <button id="openContactBtn" class="swal2-confirm swal2-styled" style="background:#2563eb;border-radius:30px;padding:0.6rem 2rem;">
+                    📇 Open Contact
+                  </button>
+                `,
+                showConfirmButton: false,
+                showCloseButton: true,
+                background: '#1a1a1a',
+                color: '#fff',
+                didOpen: (innerModal) => {
+                  const openBtn = innerModal.querySelector('#openContactBtn');
+                  if (openBtn) {
+                    openBtn.addEventListener('click', () => {
+                      openVCard(vcard, fileName);
+                      Swal.close();
+                    });
+                  }
+                },
+              });
+            } catch (err) {
+              Swal.fire({
+                icon: 'error',
+                title: 'Save failed',
+                text: 'Could not save contact. Please try again.',
+                background: '#1a1a1a',
+                color: '#fff',
               });
             }
-          },
-        });
-      }
-    }
+          });
+        }
+      },
+    });
   } catch (error) {
     console.error('Error in showContactDetails:', error);
     await Swal.fire({
