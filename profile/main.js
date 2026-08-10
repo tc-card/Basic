@@ -3,6 +3,7 @@ const CONFIG = {
   defaultProfilePic: "https://tccards.tn/Assets/default.png",
   databases: {
     id: "AKfycbwKdG3ktzHcukFjVCxaMqn6Twyj_Qioj1yoQt5Dj5QmsZxE3wvLaaU4zFBOZbWJNGYX",
+    //For this project specifically, the page must call the Apps Script directly, it should stay as a public config value, not a secret, Anything shipped to the client can be seen by users anyway.
     plan: "basic",
   },
   styles: {
@@ -42,7 +43,7 @@ document.addEventListener("DOMContentLoaded", function () {
   searchProfile(identifier, isIdLookup);
 });
 
-// Fast profile lookup using single database, redirects to 404.html on error
+
 async function searchProfile(identifier, isIdLookup) {
   try {
     const param = isIdLookup ? "id" : "link";
@@ -133,10 +134,9 @@ function handleProfileData(data, plan) {
       address: data.Address || "",
     };
 
-    // FIX: Update meta tags dynamically so social/search previews reflect the real profile
+    
     updateMetaTags(profileData);
 
-    // Apply background style if available
     if (data["Selected Style"]) {
       const selectedStyle = String(data["Selected Style"]).trim();
       const presetBackgrounds = {
@@ -149,7 +149,7 @@ function handleProfileData(data, plan) {
 
       const backgroundStyle =
         presetBackgrounds[selectedStyle] ||
-        (selectedStyle.includes("gradient(") || selectedStyle.startsWith("url(")
+        (selectedStyle.includes("gradient(") || selectedStyle.startsWith("http")
           ? selectedStyle
           : CONFIG.defaultBg);
 
