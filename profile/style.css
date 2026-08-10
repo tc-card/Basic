@@ -38,6 +38,19 @@ body {
     margin-bottom: 15px;
 }
 
+.tagline-text {
+  margin: 0 0 1rem 0;
+  font-size: 1.1rem;
+  color: #fff;
+  text-shadow: 
+    -1px -1px 0 #000,
+     1px -1px 0 #000,
+    -1px  1px 0 #000,
+     1px  1px 0 #000,
+     0px  0px 8px rgba(0,0,0,0.8);
+  text-align: center;
+}
+
 .loader {
     text-align: center;
     padding: 2rem;

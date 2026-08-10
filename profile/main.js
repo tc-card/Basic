@@ -167,10 +167,9 @@ function handleProfileData(data, plan) {
         <div class="flex flex-col items-center">
           <img src="${escapeHtml(profileData.profilePic)}" class="w-32 h-32 bg-gray-800 rounded-full mb-4 profile-picture" alt="${escapeHtml(profileData.name)}'s profile">
           <div class="w-full h-12 bg-gray-800 rounded mb-2 flex items-center justify-center">
-            <!-- FIX: Removed duplicate "text-xl text-2xl" — keep only text-2xl -->
             <h1 class="text-2xl font-bold text-white">${escapeHtml(profileData.name)}</h1>
           </div>
-          ${profileData.tagline ? `<div class="w-full h-full bg-gray-800 rounded mb-4 flex items-center justify-center"><p class="text-gray-300">${escapeHtml(profileData.tagline)}</p></div>` : ""}
+          ${profileData.tagline ? `<p class="tagline-text">${escapeHtml(profileData.tagline)}</p>` : ""}
           <div class="w-full bg-transparent mb-4">
             ${renderSocialLinks(profileData.socialLinks)}
           </div>
