@@ -154,7 +154,7 @@ function handleProfileData(data, plan) {
           : CONFIG.defaultBg);
 
       document.body.style.background = backgroundStyle;
-      document.body.style.backgroundSize = backgroundStyle.startsWith("url(") ? "cover" : "auto";
+      document.body.style.backgroundSize = backgroundStyle.startsWith("http") ? "cover" : "auto";
     }
 
     container.innerHTML = `
