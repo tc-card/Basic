@@ -139,22 +139,31 @@ function handleProfileData(data, plan) {
 
     if (data["Selected Style"]) {
       const selectedStyle = String(data["Selected Style"]).trim();
+      
+      // UPDATED: Added the 5 new live preset gradients
       const presetBackgrounds = {
         corporateGradient:
           "linear-gradient(145deg, rgb(9, 9, 11), rgb(24, 24, 27), rgb(9, 9, 11))",
         oceanGradient:
           "linear-gradient(145deg, rgb(2, 6, 23), rgb(15, 23, 42), rgb(2, 6, 23))",
+        ocean: "linear-gradient(135deg, #2b6777, #c8d8e4)",
+        sunset: "linear-gradient(135deg, #ff512f, #f09819)",
+        midnight: "linear-gradient(135deg, #000428, #004e92)",
+        neon: "linear-gradient(135deg, #00c6ff, #0072ff)",
+        purple: "linear-gradient(135deg, #7c3aed, #1d4ed8)",
         default: CONFIG.defaultBg,
       };
 
       const backgroundStyle =
         presetBackgrounds[selectedStyle] ||
-        (selectedStyle.includes("gradient(") || selectedStyle.startsWith("http")
+        (selectedStyle.includes("gradient(") || selectedStyle.startsWith("http") || selectedStyle.trim().startsWith("url(")
           ? selectedStyle
           : CONFIG.defaultBg);
 
       document.body.style.background = backgroundStyle;
-      document.body.style.backgroundSize = backgroundStyle.startsWith("http") ? "cover" : "auto";
+      
+      // UPDATED: Correctly detects both standard http links and CSS url("...") links
+      document.body.style.backgroundSize = (backgroundStyle.startsWith("http") || backgroundStyle.trim().startsWith("url(")) ? "cover" : "auto";
     }
 
     container.innerHTML = `
