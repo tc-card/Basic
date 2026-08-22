@@ -7,12 +7,10 @@ const CONFIG = {
   },
   styles: {
     corporateGradient: {
-      background:
-        "linear-gradient(145deg, rgb(9, 9, 11), rgb(24, 24, 27), rgb(9, 9, 11))",
+      background: "linear-gradient(145deg, rgb(9, 9, 11), rgb(24, 24, 27), rgb(9, 9, 11))",
     },
     oceanGradient: {
-      background:
-        "linear-gradient(145deg, rgb(2, 6, 23), rgb(15, 23, 42), rgb(2, 6, 23))",
+      background: "linear-gradient(145deg, rgb(2, 6, 23), rgb(15, 23, 42), rgb(2, 6, 23))",
     },
   },
 };
@@ -23,19 +21,38 @@ document.addEventListener("DOMContentLoaded", function () {
   document.body.style.backgroundSize = "cover";
   document.body.style.backdropFilter = "blur(5px)";
 
-  const hash = window.location.hash.substring(1);
+  // Allow hash to be modified for the random profile logic
+  let hash = window.location.hash.substring(1);
+  
   if (!hash) {
     showError("No profile link provided");
     return;
   }
 
+  // --- RANDOM PROFILE MAGIC URL LOGIC ---
+  // If someone visits /@Random-profile or /@random
+  if (hash.toLowerCase() === 'random-profile' || hash.toLowerCase() === 'random') {
+    // Replace these with actual active usernames from your Spreadsheet (without the @)
+    const randomUsernames = ['Ali', 'SkanDev', 'yassine', 'mehdigh', 'Oussemabennour', 'Paralingua', 'Keeto', 'houssem', 'Emna', 'Omar', 'Mohamed', 'Hamza', 'Oussema', 'the_cyber_corner', 'Seddik', 'Nour', 'Ameni', 'Chiheb'];
+    // Pick a random user
+    const randomUsername = randomUsernames[Math.floor(Math.random() * randomUsernames.length)];
+
+    // Update the URL bar to show the actual user found
+    hash = randomUsername;
+    window.history.replaceState(null, null, `https://card.tccards.tn/@${hash}`);
+  }
+  // --- END RANDOM PROFILE LOGIC ---
+
   const isIdLookup = hash.startsWith("id_");
   const identifier = isIdLookup ? hash.split("_")[1] : hash;
-  const newUrl = isIdLookup 
-    ? `https://card.tccards.tn/id_${identifier}` 
-    : `https://card.tccards.tn/@${hash}`;
   
-  window.history.replaceState(null, null, newUrl);
+  // Only update the URL here if it wasn't already done by the random logic
+  if (!window.location.hash.includes('random')) {
+      const newUrl = isIdLookup 
+        ? `https://card.tccards.tn/id_${identifier}` 
+        : `https://card.tccards.tn/@${hash}`;
+      window.history.replaceState(null, null, newUrl);
+  }
 
   searchProfile(identifier, isIdLookup);
 });
@@ -256,6 +273,7 @@ function updateMetaTags(profileData, isIdView) {
   setMeta('meta[name="twitter:title"]', "content", title);
   setMeta('meta[name="twitter:description"]', "content", description);
   setMeta('meta[name="twitter:image"]', "content", image);
+
 }
 
 function renderSocialLinks(links) {
