@@ -3,7 +3,6 @@ const CONFIG = {
   defaultProfilePic: "https://tccards.tn/Assets/default.png",
   databases: {
     id: "AKfycbwKdG3ktzHcukFjVCxaMqn6Twyj_Qioj1yoQt5Dj5QmsZxE3wvLaaU4zFBOZbWJNGYX",
-    //For this project specifically, the page must call the Apps Script directly, it should stay as a public config value, not a secret, Anything shipped to the client can be seen by users anyway.
     plan: "basic",
   },
   styles: {
@@ -19,47 +18,40 @@ const CONFIG = {
 };
 
 document.addEventListener("DOMContentLoaded", function () {
-  // Set initial background
   document.body.style.background =
     "url(https://tccards.tn/Assets/background.png) center fixed";
   document.body.style.backgroundSize = "cover";
   document.body.style.backdropFilter = "blur(5px)";
 
-  // Extract identifier from URL hash
   const hash = window.location.hash.substring(1);
   if (!hash) {
     showError("No profile link provided");
     return;
   }
 
-  // Update URL without reload
-  const newUrl = `https://card.tccards.tn/@${hash}`;
-  window.history.replaceState(null, null, newUrl);
-
-  // Determine lookup type and start search
   const isIdLookup = hash.startsWith("id_");
   const identifier = isIdLookup ? hash.split("_")[1] : hash;
+  const newUrl = isIdLookup 
+    ? `https://card.tccards.tn/id_${identifier}` 
+    : `https://card.tccards.tn/@${hash}`;
+  
+  window.history.replaceState(null, null, newUrl);
 
   searchProfile(identifier, isIdLookup);
 });
-
 
 async function searchProfile(identifier, isIdLookup) {
   try {
     const param = isIdLookup ? "id" : "link";
     const url = `https://script.google.com/macros/s/${CONFIG.databases.id}/exec?${param}=${encodeURIComponent(identifier)}`;
-
     const response = await fetchWithTimeout(url, { timeout: 5000 });
-
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-
     const data = await response.json();
     if (data?.status === "error") {
       showError("Profile not found");
       window.location.href = "/404.html";
       return;
     }
-
     if (data && typeof data === "object") {
       handleProfileData(data);
     } else {
@@ -71,7 +63,6 @@ async function searchProfile(identifier, isIdLookup) {
   }
 }
 
-// Helper function with timeout
 async function fetchWithTimeout(resource, options = {}) {
   const { timeout = 18000 } = options;
   const controller = new AbortController();
@@ -101,17 +92,14 @@ function handleProfileData(data, plan) {
     showError("Invalid profile data received");
     return;
   }
-
   if (data.status === "error") {
     showError(data?.message || "Profile data could not be loaded");
     return;
   }
-
   if (!data.Name) {
     showError("Invalid profile data: Name is required");
     return;
   }
-
   if (data?.Status && data.Status !== "Active") {
     showError("This profile is currently inactive");
     return;
@@ -121,31 +109,32 @@ function handleProfileData(data, plan) {
     const container = document.querySelector(".card-container");
     container.style.display = "block";
 
+    const isIdView = window.location.hash.startsWith("id_");
     const profileData = {
       name: data.Name || "User",
       link: data.Link || "tccards",
+      id: data.ID || "",
       tagline: data.Tagline || "",
-      profilePic:
-        data["Profile Picture URL"] ||
-        "https://tccards.tn/Assets/default.png",
+      profilePic: data["Profile Picture URL"] || "https://tccards.tn/Assets/default.png",
       socialLinks: data["Social Links"] || "",
       email: data.Email || "",
       phone: data.Phone || "",
       address: data.Address || "",
     };
 
-    
-    updateMetaTags(profileData);
+    const shareUrl = isIdView 
+      ? `https://card.tccards.tn/id_${profileData.id}` 
+      : `https://card.tccards.tn/@${escapeHtml(profileData.link)}`;
+
+    updateMetaTags(profileData, isIdView);
 
     if (data["Selected Style"]) {
       const selectedStyle = String(data["Selected Style"]).trim();
       
       // UPDATED: Added the 5 new live preset gradients
       const presetBackgrounds = {
-        corporateGradient:
-          "linear-gradient(145deg, rgb(9, 9, 11), rgb(24, 24, 27), rgb(9, 9, 11))",
-        oceanGradient:
-          "linear-gradient(145deg, rgb(2, 6, 23), rgb(15, 23, 42), rgb(2, 6, 23))",
+        corporateGradient: "linear-gradient(145deg, rgb(9, 9, 11), rgb(24, 24, 27), rgb(9, 9, 11))",
+        oceanGradient: "linear-gradient(145deg, rgb(2, 6, 23), rgb(15, 23, 42), rgb(2, 6, 23))",
         ocean: "linear-gradient(135deg, #2b6777, #c8d8e4)",
         sunset: "linear-gradient(135deg, #ff512f, #f09819)",
         midnight: "linear-gradient(135deg, #000428, #004e92)",
@@ -161,30 +150,36 @@ function handleProfileData(data, plan) {
           : CONFIG.defaultBg);
 
       document.body.style.background = backgroundStyle;
-      
-      // UPDATED: Correctly detects both standard http links and CSS url("...") links
       document.body.style.backgroundSize = (backgroundStyle.startsWith("http") || backgroundStyle.trim().startsWith("url(")) ? "cover" : "auto";
     }
 
     container.innerHTML = `
-      <div class="w-full container max-w-md p-6 md:p-24 rounded-xl shadow-lg mx-auto" style="background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px);">
-        <div class="flex justify-end mb-0 top-right" onclick="showShareOptions('https://card.tccards.tn/@${escapeHtml(profileData.link)}')">
-          <div class="w-8 h-8 bg-gray-800 rounded-full flex items-center justify-center">
-            <i class="fas fa-share-alt text-gray-400"></i>
+      <!-- UPDATED: Dark Glassmorphism Card for Maximum Readability on Bright Backgrounds -->
+      <div class="w-full container max-w-md p-6 md:p-24 rounded-xl shadow-2xl mx-auto" style="background: rgba(17, 24, 39, 0.85); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.15); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.4), 0 10px 10px -5px rgba(0, 0, 0, 0.2);">
+        <div class="flex justify-end mb-0 top-right" onclick="showShareOptions('${shareUrl}')">
+          <div class="w-8 h-8 bg-gray-800 rounded-full flex items-center justify-center hover:bg-gray-700 transition-colors">
+            <i class="fas fa-share-alt text-gray-300"></i>
           </div>
         </div>
         <div class="flex flex-col items-center">
-          <img src="${escapeHtml(profileData.profilePic)}" class="w-32 h-32 bg-gray-800 rounded-full mb-4 profile-picture" alt="${escapeHtml(profileData.name)}'s profile">
-          <div class="w-full h-12 bg-gray-800 rounded mb-2 flex items-center justify-center">
+          <!-- Profile Image with glow effect -->
+          <img src="${escapeHtml(profileData.profilePic)}" class="w-32 h-32 bg-gray-800 rounded-full mb-4 profile-picture" style="box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.2);" alt="${escapeHtml(profileData.name)}'s profile">
+          
+          <!-- Name Plate -->
+          <div class="w-full h-12 bg-gray-800 rounded mb-2 flex items-center justify-center shadow-lg">
             <h1 class="text-2xl font-bold text-white">${escapeHtml(profileData.name)}</h1>
           </div>
-          ${profileData.tagline ? `<p class="tagline-text">${escapeHtml(profileData.tagline)}</p>` : ""}
+          
+          <!-- Tagline with shadow for readability -->
+          ${profileData.tagline ? `<p class="tagline-text" style="text-shadow: 0 2px 4px rgba(0,0,0,0.8);">${escapeHtml(profileData.tagline)}</p>` : ""}
+          
+          <!-- Social Links -->
           <div class="w-full bg-transparent mb-4">
             ${renderSocialLinks(profileData.socialLinks)}
           </div>
-          ${
-            profileData.email || profileData.phone || profileData.address
-              ? `<div class="w-48 h-12 bg-gray-800 rounded mb-4 flex items-center justify-center">
+          
+          ${profileData.email || profileData.phone || profileData.address
+            ? `<div class="w-48 h-12 bg-gray-800 rounded mb-4 flex items-center justify-center shadow-lg">
               <button class="contact-btn" onclick="showContactDetails(${escapeHtml(
                 JSON.stringify({
                   name: profileData.name,
@@ -195,19 +190,19 @@ function handleProfileData(data, plan) {
                 })
               )})">Get in Touch</button>
             </div>`
-              : ""
+            : ""
           }
         </div>
 
         <!-- Footer -->
-        <div class="mt-8 pt-4 border-t border-gray-800">
+        <div class="mt-8 pt-4 border-t border-white/10">
           <footer class="space-y-2 text-center">
-            <div class="w-full py-2 rounded-lg bg-white/5 backdrop-blur-md">
-              <a href="https://tccards.tn" class="text-gray-400 hover:text-white text-sm transition-colors">
+            <div class="w-full py-2 rounded-lg bg-white/5 backdrop-blur-md border border-white/10">
+              <a href="https://tccards.tn" class="text-gray-300 hover:text-white text-sm transition-colors">
                 Powered by &copy; Total Connect ${new Date().getFullYear()}
               </a>
             </div>
-            <div class="w-1/2 mx-auto py-2 rounded-lg bg-gray-900">
+            <div class="w-1/2 mx-auto py-2 rounded-lg bg-gray-900 shadow-lg border border-white/10">
               <a href="https://plans.tccards.tn" target="_blank" class="text-emerald-400 hover:text-emerald-300 text-sm font-medium transition-colors">
                 Get your Card
               </a>
@@ -224,23 +219,19 @@ function handleProfileData(data, plan) {
   }
 }
 
-/**
- * FIX: Dynamically update all SEO meta tags once we have real profile data.
- * This makes social previews (WhatsApp, Twitter, LinkedIn, etc.) show the
- * actual person's name, tagline, and profile picture instead of the generic defaults.
- */
-function updateMetaTags(profileData) {
-  const profileUrl = `https://card.tccards.tn/@${profileData.link}`;
+function updateMetaTags(profileData, isIdView) {
+  const profileUrl = isIdView 
+    ? `https://card.tccards.tn/id_${profileData.id}` 
+    : `https://card.tccards.tn/@${profileData.link}`;
+    
   const title = `${profileData.name} | Total Connect NFC`;
   const description = profileData.tagline
     ? `${profileData.tagline} — View ${profileData.name}'s digital business card.`
     : `View and save ${profileData.name}'s digital business card, powered by Total Connect NFC.`;
   const image = profileData.profilePic || "https://tccards.tn/Assets/150.png";
 
-  // Page title
   document.title = title;
 
-  // Helper to set or create a meta tag
   const setMeta = (selector, attr, value) => {
     let el = document.querySelector(selector);
     if (!el) {
@@ -252,20 +243,16 @@ function updateMetaTags(profileData) {
     el.setAttribute(attr, value);
   };
 
-  // Standard
   setMeta('meta[name="description"]', "content", description);
 
-  // Canonical
   let canonical = document.querySelector('link[rel="canonical"]');
   if (canonical) canonical.href = profileUrl;
 
-  // Open Graph
   setMeta('meta[property="og:title"]', "content", title);
   setMeta('meta[property="og:description"]', "content", description);
   setMeta('meta[property="og:image"]', "content", image);
   setMeta('meta[property="og:url"]', "content", profileUrl);
 
-  // Twitter
   setMeta('meta[name="twitter:title"]', "content", title);
   setMeta('meta[name="twitter:description"]', "content", description);
   setMeta('meta[name="twitter:image"]', "content", image);
@@ -302,14 +289,12 @@ function renderSocialLinks(links) {
         .map(
           (link) => `
         <a href="${escapeHtml(link.href)}" target="_blank" rel="noopener noreferrer" class="social-link-item">
-          <!-- Primary favicon (DuckDuckGo is usually the most reliable) -->
           <img 
             src="https://icons.duckduckgo.com/ip3/${encodeURIComponent(link.domain)}.ico" 
             alt=""
             class="social-icon"
             onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-flex';"
           />
-          <!-- Fallback icon (Font Awesome 'link' icon) -->
           <i class="fas fa-link social-icon-fallback" style="display:none;"></i>
           <span>${escapeHtml(link.display)}</span>
         </a>
@@ -321,7 +306,6 @@ function renderSocialLinks(links) {
 }
 
 // ========== vCard & Contact Helpers ==========
-
 function generateVCard(contact) {
   const fullName = contact.name || 'Contact';
   const email = contact.email || '';
@@ -388,8 +372,6 @@ async function copyContactDetails(contact) {
   }
 }
 
-// ========== Show Contact Details (updated) ==========
-// ========== Show Contact Details (final) ==========
 async function showContactDetails(contact) {
   try {
     if (!contact || typeof contact !== 'object') {
@@ -400,29 +382,13 @@ async function showContactDetails(contact) {
       <div class="contact-details">
         <h3 class="contact-name">${escapeHtml(contact.name)}</h3>
         <div class="contact-detail-list">
-          ${contact.email ? `
-            <div class="contact-detail-item">
-              <i class="fas fa-envelope"></i>
-              <a href="mailto:${escapeHtml(contact.email)}">${escapeHtml(contact.email)}</a>
-            </div>` : ''}
-          ${contact.phone ? `
-            <div class="contact-detail-item">
-              <i class="fas fa-phone"></i>
-              <a href="tel:${escapeHtml(contact.phone)}">${escapeHtml(contact.phone)}</a>
-            </div>` : ''}
-          ${contact.address ? `
-            <div class="contact-detail-item">
-              <i class="fas fa-map-marker-alt"></i>
-              <a href="https://maps.google.com/?q=${encodeURIComponent(contact.address)}" target="_blank">${escapeHtml(contact.address)}</a>
-            </div>` : ''}
+          ${contact.email ? `<div class="contact-detail-item"><i class="fas fa-envelope"></i><a href="mailto:${escapeHtml(contact.email)}">${escapeHtml(contact.email)}</a></div>` : ''}
+          ${contact.phone ? `<div class="contact-detail-item"><i class="fas fa-phone"></i><a href="tel:${escapeHtml(contact.phone)}">${escapeHtml(contact.phone)}</a></div>` : ''}
+          ${contact.address ? `<div class="contact-detail-item"><i class="fas fa-map-marker-alt"></i><a href="https://maps.google.com/?q=${encodeURIComponent(contact.address)}" target="_blank">${escapeHtml(contact.address)}</a></div>` : ''}
         </div>
         <div class="contact-actions-row">
-          <button class="contact-action-btn copy-btn" id="copyDetailsBtn">
-            <i class="fas fa-copy"></i> Copy Details
-          </button>
-          <button class="contact-action-btn save-btn" id="saveContactBtn">
-            <i class="fas fa-save"></i> Save Contact
-          </button>
+          <button class="contact-action-btn copy-btn" id="copyDetailsBtn"><i class="fas fa-copy"></i> Copy Details</button>
+          <button class="contact-action-btn save-btn" id="saveContactBtn"><i class="fas fa-save"></i> Save Contact</button>
         </div>
       </div>
     `;
@@ -442,39 +408,19 @@ async function showContactDetails(contact) {
         popup: 'swal-popup-custom',
       },
       didOpen: (modal) => {
-        // ---- Copy Details ----
         const copyBtn = modal.querySelector('#copyDetailsBtn');
         if (copyBtn) {
           copyBtn.addEventListener('click', async (e) => {
             e.stopPropagation();
             const copied = await copyContactDetails(contact);
             if (copied) {
-              Swal.fire({
-                icon: 'success',
-                title: 'Copied!',
-                toast: true,
-                position: 'center',
-                showConfirmButton: false,
-                timer: 1500,
-                timerProgressBar: true,
-                background: '#1a1a1a',
-                color: '#fff',
-              });
+              Swal.fire({ icon: 'success', title: 'Copied!', toast: true, position: 'center', showConfirmButton: false, timer: 1500, timerProgressBar: true, background: '#1a1a1a', color: '#fff' });
             } else {
-              Swal.fire({
-                icon: 'error',
-                title: 'Copy failed',
-                text: 'Please allow clipboard access.',
-                toast: true,
-                position: 'center',
-                showConfirmButton: false,
-                timer: 2000,
-              });
+              Swal.fire({ icon: 'error', title: 'Copy failed', text: 'Please allow clipboard access.', toast: true, position: 'center', showConfirmButton: false, timer: 2000 });
             }
           });
         }
 
-        // ---- Save Contact ----
         const saveBtn = modal.querySelector('#saveContactBtn');
         if (saveBtn) {
           saveBtn.addEventListener('click', async (e) => {
@@ -483,42 +429,16 @@ async function showContactDetails(contact) {
               const vcard = generateVCard(contact);
               const fileName = `${contact.name || 'contact'}.vcf`;
 
-              // Try Web Share first
               const shared = await shareVCardFile(vcard, fileName);
               if (shared) {
-                Swal.fire({
-                  icon: 'success',
-                  title: 'Contact Shared!',
-                  text: 'Use the share sheet to add to your contacts.',
-                  background: '#1a1a1a',
-                  color: '#fff',
-                  confirmButtonColor: '#2563eb',
-                });
+                Swal.fire({ icon: 'success', title: 'Contact Shared!', text: 'Use the share sheet to add to your contacts.', background: '#1a1a1a', color: '#fff', confirmButtonColor: '#2563eb' });
                 return;
               }
 
-              // Fallback: download .vcf and show a simple toast
               downloadVCard(vcard, fileName);
-              Swal.fire({
-                icon: 'success',
-                title: 'Contact Saved!',
-                text: 'The vCard file has been downloaded.',
-                toast: true,
-                position: 'center',
-                showConfirmButton: false,
-                timer: 2000,
-                timerProgressBar: true,
-                background: '#1a1a1a',
-                color: '#fff',
-              });
+              Swal.fire({ icon: 'success', title: 'Contact Saved!', text: 'The vCard file has been downloaded.', toast: true, position: 'center', showConfirmButton: false, timer: 2000, timerProgressBar: true, background: '#1a1a1a', color: '#fff' });
             } catch (err) {
-              Swal.fire({
-                icon: 'error',
-                title: 'Save failed',
-                text: 'Could not save contact. Please try again.',
-                background: '#1a1a1a',
-                color: '#fff',
-              });
+              Swal.fire({ icon: 'error', title: 'Save failed', text: 'Could not save contact. Please try again.', background: '#1a1a1a', color: '#fff' });
             }
           });
         }
@@ -526,17 +446,9 @@ async function showContactDetails(contact) {
     });
   } catch (error) {
     console.error('Error in showContactDetails:', error);
-    await Swal.fire({
-      icon: 'error',
-      title: 'Error',
-      text: 'Could not display contact details',
-      background: '#1a1a1a',
-      color: '#fff',
-    });
+    await Swal.fire({ icon: 'error', title: 'Error', text: 'Could not display contact details', background: '#1a1a1a', color: '#fff' });
   }
 }
-
-// ========== Utility ==========
 
 function escapeHtml(unsafe) {
   if (typeof unsafe !== "string") return unsafe;
@@ -561,11 +473,8 @@ function showError(message) {
   if (existingLoader) existingLoader.remove();
 }
 
-// Expose functions used in inline onclick attributes to the global scope.
 window.showContactDetails = showContactDetails;
 window.showShareOptions = showShareOptions;
-
-// ========== Share Options ==========
 
 async function showShareOptions(link) {
   try {
