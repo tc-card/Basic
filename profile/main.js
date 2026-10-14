@@ -69,42 +69,69 @@ async function fetchWithTimeout(resource, options = {}) {
   return response;
 }
 
-/**
- * Resolves background + theme from the two possible sources:
- *   1. "Background Image" column — the raw Cloudinary URL (preferred)
- *   2. "Selected Style" column — either a gradient, or a legacy "url(...)/theme" string
- *
- * Returns { background, theme, isImage }
- */
-function resolveBackground(selectedStyle, backgroundImage) {
-  let theme = 'dark';
+// ═══════════════════════════════════════════════════════════════
+// CASE-INSENSITIVE SHEET FIELD ACCESSOR
+// Handles "Background Image", "background image", "BackgroundImage", etc.
+// ═══════════════════════════════════════════════════════════════
+function getField(data, ...candidates) {
+  if (!data || typeof data !== 'object') return '';
+  const normalized = {};
+  for (const key of Object.keys(data)) {
+    normalized[key.toLowerCase().replace(/[^a-z0-9]/g, '')] = data[key];
+  }
+  for (const c of candidates) {
+    const k = String(c).toLowerCase().replace(/[^a-z0-9]/g, '');
+    if (normalized[k] !== undefined && normalized[k] !== null) return normalized[k];
+  }
+  return '';
+}
 
-  // ── Primary: dedicated Background Image column ─────────────
-  const bgUrl = typeof backgroundImage === 'string' ? backgroundImage.trim() : '';
+// ═══════════════════════════════════════════════════════════════
+// BACKGROUND + THEME RESOLVER
+//   1. Background Image column (URL) → url('...') + theme from Selected Style
+//   2. Selected Style = "image/dark" | "image/light" → default bg + theme
+//   3. Selected Style = gradient → use gradient, dark theme
+//   4. Legacy "url('...')/theme" → legacy support
+// ═══════════════════════════════════════════════════════════════
+function resolveBackground(selectedStyle, backgroundImage) {
+  const styleStr = typeof selectedStyle === 'string' ? selectedStyle.trim() : '';
+  const bgUrl    = typeof backgroundImage === 'string' ? backgroundImage.trim() : '';
+
+  // Extract theme from Selected Style if it ends with /dark or /light
+  let theme = 'dark';
+  const themeMatch = styleStr.match(/\/(dark|light)\s*$/i);
+  if (themeMatch) theme = themeMatch[1].toLowerCase();
+
+  // ── 1. Real background image URL ───────────────────────────
   if (bgUrl && /^https?:\/\//i.test(bgUrl)) {
-    // Theme may be encoded as trailing "/light" or "/dark" on Selected Style
-    if (typeof selectedStyle === 'string') {
-      const m = selectedStyle.match(/\/(dark|light)\s*$/i);
-      if (m) theme = m[1].toLowerCase();
-    }
     return { background: `url('${bgUrl}')`, theme, isImage: true };
   }
 
-  // ── Fallback: Selected Style ───────────────────────────────
-  if (!selectedStyle || typeof selectedStyle !== 'string') {
+  // ── 2. "image/dark" | "image/light" marker with no URL yet ─
+  if (styleStr.toLowerCase().startsWith('image/')) {
     return { background: CONFIG.defaultBg, theme, isImage: true };
   }
 
-  // Pull a trailing "/dark" or "/light" off the end (only matches at the very end)
-  let style = selectedStyle.trim();
-  const themeMatch = style.match(/\/(dark|light)\s*$/i);
-  if (themeMatch) {
-    theme = themeMatch[1].toLowerCase();
-    style = style.slice(0, themeMatch.index).trim();
+  // ── 3. Legacy "url('...')/theme" ───────────────────────────
+  if (styleStr.toLowerCase().startsWith('url(')) {
+    const urlMatch = styleStr.match(/url\(["']?(.*?)["']?\)/i);
+    const url = urlMatch?.[1] || '';
+    if (url && /^https?:\/\//i.test(url)) {
+      return { background: `url('${url}')`, theme, isImage: true };
+    }
+    return { background: CONFIG.defaultBg, theme, isImage: true };
   }
 
-  const isImage = /^url\(/i.test(style) || /^https?:/i.test(style);
-  return { background: style, theme, isImage };
+  // ── 4. Gradient ────────────────────────────────────────────
+  if (styleStr.toLowerCase().includes('linear-gradient')) {
+    // Strip a trailing "/dark" or "/light" if present
+    let gradient = styleStr;
+    if (themeMatch) gradient = styleStr.slice(0, themeMatch.index).trim();
+    return { background: gradient, theme, isImage: false };
+  }
+
+  // ── Fallback ───────────────────────────────────────────────
+  return { background: CONFIG.defaultBg, theme, isImage: true };
 }
 
 function handleProfileData(data, plan) {
@@ -120,8 +147,12 @@ function handleProfileData(data, plan) {
 
   if (!data || typeof data !== "object") { showError("Invalid profile data received"); return; }
   if (data.status === "error") { showError(data?.message || "Profile data could not be loaded"); return; }
-  if (!data.Name) { showError("Invalid profile data: Name is required"); return; }
-  if (data?.Status && data.Status !== "Active") { showError("This profile is currently inactive"); return; }
+
+  const resolvedName = getField(data, 'Name');
+  if (!resolvedName) { showError("Invalid profile data: Name is required"); return; }
+
+  const resolvedStatus = getField(data, 'Status');
+  if (resolvedStatus && resolvedStatus !== "Active") { showError("This profile is currently inactive"); return; }
 
   try {
     const container = document.querySelector(".card-container");
@@ -130,17 +161,17 @@ function handleProfileData(data, plan) {
     const isIdView = window.location.hash.startsWith("id_");
 
     const profileData = {
-      name: data.Name || "User",
-      link: data.Link || "tccards",
-      id: data.ID || "",
-      tagline: data.Tagline || "",
-      profilePic: data["Profile Picture URL"] || CONFIG.defaultProfilePic,
-      socialLinks: data["Social Links"] || "",
-      email: data.Email || "",
-      phone: data.Phone || "",
-      address: data.Address || "",
-      selectedStyle: data["Selected Style"] || "",
-      backgroundImage: data["Background Image"] || "",
+      name:            getField(data, 'Name') || 'User',
+      link:            getField(data, 'Link') || 'tccards',
+      id:              getField(data, 'ID'),
+      tagline:         getField(data, 'Tagline'),
+      profilePic:      getField(data, 'Profile Picture URL', 'Profile Picture', 'Profile Pic') || CONFIG.defaultProfilePic,
+      socialLinks:     getField(data, 'Social Links', 'SocialLinks') || '',
+      email:           getField(data, 'Email') || '',
+      phone:           getField(data, 'Phone') || '',
+      address:         getField(data, 'Address') || '',
+      selectedStyle:   getField(data, 'Selected Style', 'Style') || '',
+      backgroundImage: getField(data, 'Background Image', 'BackgroundImage', 'Background') || '',
     };
 
     const shareUrl = isIdView
@@ -155,10 +186,16 @@ function handleProfileData(data, plan) {
       profileData.backgroundImage
     );
 
-    document.body.style.background = background;
-    document.body.style.backgroundSize = isImage ? 'cover' : 'auto';
-    document.body.style.backgroundPosition = 'center';
-    document.body.style.backgroundRepeat = 'no-repeat';
+    // Only apply if it looks like a valid CSS value
+    if (background && (background.startsWith('url(') || background.includes('gradient'))) {
+      document.body.style.background = background;
+      document.body.style.backgroundSize = isImage ? 'cover' : 'auto';
+      document.body.style.backgroundPosition = 'center';
+      document.body.style.backgroundRepeat = 'no-repeat';
+    } else {
+      document.body.style.background = CONFIG.defaultBg;
+      document.body.style.backgroundSize = 'cover';
+    }
 
     // ── Theme-dependent glassmorphism ──────────────────────────
     const cardBg     = cardTheme === 'light' ? 'rgba(255, 255, 255, 0.2)' : 'rgba(17, 24, 39, 0.85)';
@@ -224,7 +261,12 @@ function handleProfileData(data, plan) {
       </div>
     `;
 
-    console.log("Profile loaded");
+    console.log("Profile loaded", {
+      selectedStyle: profileData.selectedStyle,
+      backgroundImage: profileData.backgroundImage,
+      resolvedTheme: cardTheme,
+      appliedBg: background
+    });
   } catch (error) {
     console.error("Profile rendering error:", error);
     showError("Error displaying profile");
