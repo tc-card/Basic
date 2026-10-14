@@ -145,59 +145,61 @@ function handleProfileData(data, plan) {
 
     updateMetaTags(profileData, isIdView);
 
-    if (data["Selected Style"]) {
-      const selectedStyle = String(data["Selected Style"]).trim();
-      
-      // UPDATED: Added the 5 new live preset gradients
-      const presetBackgrounds = {
-        corporateGradient: "linear-gradient(145deg, rgb(9, 9, 11), rgb(24, 24, 27), rgb(9, 9, 11))",
-        oceanGradient: "linear-gradient(145deg, rgb(2, 6, 23), rgb(15, 23, 42), rgb(2, 6, 23))",
-        ocean: "linear-gradient(135deg, #2b6777, #c8d8e4)",
-        sunset: "linear-gradient(135deg, #ff512f, #f09819)",
-        midnight: "linear-gradient(135deg, #000428, #004e92)",
-        neon: "linear-gradient(135deg, #00c6ff, #0072ff)",
-        purple: "linear-gradient(135deg, #7c3aed, #1d4ed8)",
-        default: CONFIG.defaultBg,
-      };
-
-      const backgroundStyle =
-        presetBackgrounds[selectedStyle] ||
-        (selectedStyle.includes("gradient(") || selectedStyle.startsWith("http") || selectedStyle.trim().startsWith("url(")
-          ? selectedStyle
-          : CONFIG.defaultBg);
-
-      document.body.style.background = backgroundStyle;
-      document.body.style.backgroundSize = (backgroundStyle.startsWith("http") || backgroundStyle.trim().startsWith("url(")) ? "cover" : "auto";
+    // --- THEME PARSING ---
+    let bgStyle = data["Selected Style"] || CONFIG.defaultBg;
+    let cardTheme = 'dark';
+    if (bgStyle && typeof bgStyle === 'string' && bgStyle.includes('/')) {
+      const parts = bgStyle.split('/');
+      bgStyle = parts[0].trim();
+      cardTheme = parts[1]?.trim() || 'dark';
     }
 
+    // Apply background to body
+    const isUrl = bgStyle.startsWith('url(') || bgStyle.startsWith('http');
+    document.body.style.background = isUrl ? bgStyle : bgStyle;
+    document.body.style.backgroundSize = isUrl ? 'cover' : 'auto';
+    document.body.style.backgroundPosition = 'center';
+    document.body.style.backgroundRepeat = 'no-repeat';
+
+    // Build card with theme‑dependent glassmorphism
+    const cardBg = cardTheme === 'light'
+      ? 'rgba(255, 255, 255, 0.2)'
+      : 'rgba(17, 24, 39, 0.85)';
+    const cardBorder = cardTheme === 'light'
+      ? 'rgba(255, 255, 255, 0.4)'
+      : 'rgba(255, 255, 255, 0.15)';
+    const nameBg = cardTheme === 'light' ? 'bg-white/30' : 'bg-gray-800';
+    const nameText = cardTheme === 'light' ? 'text-gray-900' : 'text-white';
+    const taglineText = cardTheme === 'light' ? 'text-gray-800' : 'text-gray-300';
+    const buttonBg = cardTheme === 'light' ? 'bg-white/30 hover:bg-white/50' : 'bg-gray-800 hover:bg-gray-700';
+    const shareIconBg = cardTheme === 'light' ? 'bg-white/30 text-gray-800' : 'bg-gray-800 text-gray-300';
+    const footerText = cardTheme === 'light' ? 'text-gray-800' : 'text-gray-300';
+    const dividerColor = cardTheme === 'light' ? 'border-white/30' : 'border-white/10';
+
     container.innerHTML = `
-      <!-- UPDATED: Dark Glassmorphism Card for Maximum Readability on Bright Backgrounds -->
-      <div class="w-full container max-w-md p-6 md:p-24 rounded-xl shadow-2xl mx-auto" style="background: rgba(17, 24, 39, 0.85); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.15); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.4), 0 10px 10px -5px rgba(0, 0, 0, 0.2);">
+      <div class="w-full container max-w-md p-6 md:p-24 rounded-xl shadow-2xl mx-auto" 
+           style="background: ${cardBg}; backdrop-filter: blur(20px); border: 1px solid ${cardBorder}; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.4), 0 10px 10px -5px rgba(0,0,0,0.2);">
         <div class="flex justify-end mb-0 top-right" onclick="showShareOptions('${shareUrl}')">
-          <div class="w-8 h-8 bg-gray-800 rounded-full flex items-center justify-center hover:bg-gray-700 transition-colors">
-            <i class="fas fa-share-alt text-gray-300"></i>
+          <div class="w-8 h-8 ${shareIconBg} rounded-full flex items-center justify-center hover:bg-gray-700 transition-colors">
+            <i class="fas fa-share-alt"></i>
           </div>
         </div>
         <div class="flex flex-col items-center">
-          <!-- Profile Image with glow effect -->
-          <img src="${escapeHtml(profileData.profilePic)}" class="w-32 h-32 bg-gray-800 rounded-full mb-4 profile-picture" style="box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.2);" alt="${escapeHtml(profileData.name)}'s profile">
+          <img src="${escapeHtml(profileData.profilePic)}" class="w-32 h-32 bg-gray-800 rounded-full mb-4 profile-picture" style="box-shadow: 0 0 0 4px ${cardTheme === 'light' ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.2)'};" alt="${escapeHtml(profileData.name)}'s profile">
           
-          <!-- Name Plate -->
-          <div class="w-full h-12 bg-gray-800 rounded mb-2 flex items-center justify-center shadow-lg">
-            <h1 class="text-2xl font-bold text-white">${escapeHtml(profileData.name)}</h1>
+          <div class="w-full h-12 ${nameBg} rounded mb-2 flex items-center justify-center shadow-lg">
+            <h1 class="text-2xl font-bold ${nameText}">${escapeHtml(profileData.name)}</h1>
           </div>
           
-          <!-- Tagline with shadow for readability -->
-          ${profileData.tagline ? `<p class="tagline-text" style="text-shadow: 0 2px 4px rgba(0,0,0,0.8);">${escapeHtml(profileData.tagline)}</p>` : ""}
+          ${profileData.tagline ? `<p class="tagline-text ${taglineText}" style="text-shadow: 0 2px 4px rgba(0,0,0,0.8);">${escapeHtml(profileData.tagline)}</p>` : ""}
           
-          <!-- Social Links -->
           <div class="w-full bg-transparent mb-4">
             ${renderSocialLinks(profileData.socialLinks)}
           </div>
           
           ${profileData.email || profileData.phone || profileData.address
-            ? `<div class="w-48 h-12 bg-gray-800 rounded mb-4 flex items-center justify-center shadow-lg">
-              <button class="contact-btn" onclick="showContactDetails(${escapeHtml(
+            ? `<div class="w-48 h-12 ${buttonBg} rounded mb-4 flex items-center justify-center shadow-lg">
+              <button class="contact-btn ${cardTheme === 'light' ? 'text-gray-900' : ''}" onclick="showContactDetails(${escapeHtml(
                 JSON.stringify({
                   name: profileData.name,
                   profilepic: profileData.profilePic,
@@ -212,14 +214,14 @@ function handleProfileData(data, plan) {
         </div>
 
         <!-- Footer -->
-        <div class="mt-8 pt-4 border-t border-white/10">
+        <div class="mt-8 pt-4 border-t ${dividerColor}">
           <footer class="space-y-2 text-center">
-            <div class="w-full py-2 rounded-lg bg-white/5 backdrop-blur-md border border-white/10">
-              <a href="https://tccards.tn" class="text-gray-300 hover:text-white text-sm transition-colors">
+            <div class="w-full py-2 rounded-lg ${cardTheme === 'light' ? 'bg-white/20' : 'bg-white/5'} backdrop-blur-md border ${dividerColor}">
+              <a href="https://tccards.tn" class="${cardTheme === 'light' ? 'text-gray-800 hover:text-gray-900' : 'text-gray-300 hover:text-white'} text-sm transition-colors">
                 Powered by &copy; Total Connect ${new Date().getFullYear()}
               </a>
             </div>
-            <div class="w-1/2 mx-auto py-2 rounded-lg bg-gray-900 shadow-lg border border-white/10">
+            <div class="w-1/2 mx-auto py-2 rounded-lg ${cardTheme === 'light' ? 'bg-gray-200' : 'bg-gray-900'} shadow-lg border ${dividerColor}">
               <a href="https://plans.tccards.tn" target="_blank" class="text-emerald-400 hover:text-emerald-300 text-sm font-medium transition-colors">
                 Get your Card
               </a>
@@ -273,7 +275,6 @@ function updateMetaTags(profileData, isIdView) {
   setMeta('meta[name="twitter:title"]', "content", title);
   setMeta('meta[name="twitter:description"]', "content", description);
   setMeta('meta[name="twitter:image"]', "content", image);
-
 }
 
 function renderSocialLinks(links) {
