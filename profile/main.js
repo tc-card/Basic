@@ -15,59 +15,10 @@ const CONFIG = {
   },
 };
 
-// ═══════════════════════════════════════════════════════════════
-// BULLETPROOF BACKGROUND SETTER
-// Sets on both <html> and <body>, with !important, plus full height.
-// This defeats any CSS file override and ensures the area is paintable.
-// ═══════════════════════════════════════════════════════════════
-function applyBodyBackground(cssValue, isImage) {
-  const html = document.documentElement;
-  const body = document.body;
-
-  // Make sure both elements fill the viewport
-  html.style.setProperty('min-height', '100vh', 'important');
-  body.style.setProperty('min-height', '100vh', 'important');
-  body.style.setProperty('margin', '0', 'important');
-
-  // Kill anything that might create a stacking context or hide the bg
-  body.style.setProperty('backdrop-filter', 'none', 'important');
-  body.style.setProperty('-webkit-backdrop-filter', 'none', 'important');
-
-  // Apply on <html> (the canvas) AND <body> for maximum reliability
-  [html, body].forEach(el => {
-    el.style.setProperty('background-image', 'none', 'important');
-    el.style.setProperty('background-color', '#0a0a0f', 'important');
-  });
-
-  if (!cssValue) {
-    cssValue = CONFIG.defaultBg;
-    isImage = true;
-  }
-
-  // Split "url(...)" vs "linear-gradient(...)" cleanly
-  const isUrl = cssValue.trim().startsWith('url(');
-
-  [html, body].forEach(el => {
-    if (isUrl) {
-      el.style.setProperty('background-image', cssValue, 'important');
-      el.style.setProperty('background-size', isImage ? 'cover' : 'auto', 'important');
-      el.style.setProperty('background-position', 'center center', 'important');
-      el.style.setProperty('background-repeat', 'no-repeat', 'important');
-      el.style.setProperty('background-attachment', 'fixed', 'important');
-    } else {
-      // gradient or any other CSS background value
-      el.style.setProperty('background', cssValue, 'important');
-    }
-  });
-
-  // Debugging aid — check DevTools console
-  console.log('[bg] applied:', cssValue, '| computed on body:',
-    getComputedStyle(body).backgroundImage.slice(0, 80));
-}
-
 document.addEventListener("DOMContentLoaded", function () {
-  // Initial default background
-  applyBodyBackground(CONFIG.defaultBg, true);
+  document.body.style.background = CONFIG.defaultBg;
+  document.body.style.backgroundSize = "cover";
+  document.body.style.backdropFilter = "blur(5px)";
 
   let hash = window.location.hash.substring(1);
   if (!hash) {
@@ -145,17 +96,17 @@ function resolveBackground(selectedStyle, backgroundImage) {
   const themeMatch = styleStr.match(/\/(dark|light)\s*$/i);
   if (themeMatch) theme = themeMatch[1].toLowerCase();
 
-  // ── 1. Dedicated Background Image column ───────────────────
+  // 1. Dedicated Background Image column
   if (bgUrl && /^https?:\/\//i.test(bgUrl)) {
     return { background: `url('${bgUrl}')`, theme, isImage: true };
   }
 
-  // ── 2. "image/dark" | "image/light" marker ─────────────────
+  // 2. "image/dark" | "image/light" marker
   if (styleStr.toLowerCase().startsWith('image/')) {
     return { background: CONFIG.defaultBg, theme, isImage: true };
   }
 
-  // ── 3. Legacy "url('...')/theme" ───────────────────────────
+  // 3. Legacy "url('...')/theme"
   if (styleStr.toLowerCase().startsWith('url(')) {
     const urlMatch = styleStr.match(/url\(["']?(.*?)["']?\)/i);
     const url = urlMatch?.[1] || '';
@@ -165,7 +116,7 @@ function resolveBackground(selectedStyle, backgroundImage) {
     return { background: CONFIG.defaultBg, theme, isImage: true };
   }
 
-  // ── 4. Gradient ────────────────────────────────────────────
+  // 4. Gradient
   if (styleStr.toLowerCase().includes('linear-gradient')) {
     let gradient = styleStr;
     if (themeMatch) gradient = styleStr.slice(0, themeMatch.index).trim();
@@ -221,21 +172,16 @@ function handleProfileData(data, plan) {
 
     updateMetaTags(profileData, isIdView);
 
-    // ── Resolve + apply background ─────────────────────────────
+    // ── Background + theme resolution ──────────────────────────
     const { background, theme: cardTheme, isImage } = resolveBackground(
       profileData.selectedStyle,
       profileData.backgroundImage
     );
 
-    console.log('[resolve]', {
-      selectedStyle: profileData.selectedStyle,
-      backgroundImage: profileData.backgroundImage,
-      resolved: background,
-      theme: cardTheme,
-      isImage
-    });
-
-    applyBodyBackground(background, isImage);
+    document.body.style.background = background;
+    document.body.style.backgroundSize = isImage ? 'cover' : 'auto';
+    document.body.style.backgroundPosition = 'center';
+    document.body.style.backgroundRepeat = 'no-repeat';
 
     // ── Theme-dependent glassmorphism ──────────────────────────
     const cardBg     = cardTheme === 'light' ? 'rgba(255, 255, 255, 0.2)' : 'rgba(17, 24, 39, 0.85)';
