@@ -47,42 +47,6 @@ tc-card/Basic/
 ├── index.html                # Root landing (likely handles redirects)
 └── README.md                 # This file
 ```
-
----
-
-## 🚀 Setup & Deployment
-
-### Step 1: Set up the Database (Google Sheets)
-1. Create a Google Sheet and a sheet named `Form`.
-2. Add the exact headers: `Timestamp`, `Name`, `Email`, `Link`, `Tagline`, `Phone`, `Address`, `Social Links`, `Style`, `Profile Picture`, `Form Email`, `ID`, `Status`.
-3. Deploy `profile.gs` as a Web App (Execute as: Me, Access: Anyone).
-4. Copy the deployment URL and update the `id` value inside `const CONFIG = {` in `profile/main.js`.
-
-### Step 2: Set up Routing (Cloudflare Worker)
-1. Create a new Worker in Cloudflare.
-2. Copy `worker.js` into your worker.
-3. Create a Route for `card.tccards.tn/*` (Proxied).
-4. Ensure assets (CSS/JS) pass through to the correct `profile/` directory on GitHub Pages.
-
-### Step 3: Host on GitHub Pages
-1. Push all files to this repository.
-2. The `.github/workflows/static.yml` will automatically deploy the site.
-3. Ensure `card.tccards.tn` points to your GitHub Pages URL (via a CNAME record).
-
-### Step 4: Handle Redirects
-The `.redirects` file handles root URL redirects. For example, `/profile/@username` should route to the static `profile/index.html` if needed. Ensure your workflow or hosting provider respects these rules.
-
----
-## 👥 Contributing
-
-Contributions are welcome! Please follow these steps:
-
-1. Fork the repository.
-2. Create a new branch (`git checkout -b feature/YourFeature`).
-3. Commit your changes (`git commit -m 'Add your feature'`).
-4. Push to the branch (`git push origin feature/YourFeature`).
-5. Open a Pull Request.
-
 ---
 
 ## 📄 License
