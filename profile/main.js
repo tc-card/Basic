@@ -27,7 +27,7 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   const isIdLookup = hash.startsWith("id_");
-  const identifier = isIdLookup ? hash.split("_")[1] : hash;
+  const identifier = isIdLookup ? hash.slice(3) : hash;
 
   const newUrl = isIdLookup
     ? `https://card.tccards.tn/id_${identifier}`
@@ -50,7 +50,7 @@ async function searchProfile(identifier, isIdLookup) {
       return;
     }
     if (data && typeof data === "object") {
-      handleProfileData(data);
+      handleProfileData(data, undefined, isIdLookup);
     } else {
       showError("Invalid profile data");
     }
@@ -61,26 +61,38 @@ async function searchProfile(identifier, isIdLookup) {
 }
 
 async function fetchWithTimeout(resource, options = {}) {
-  const { timeout = 18000 } = options;
+  const { timeout = 18000, ...fetchOptions } = options;
   const controller = new AbortController();
   const id = setTimeout(() => controller.abort(), timeout);
-  const response = await fetch(resource, { ...options, signal: controller.signal });
-  clearTimeout(id);
-  return response;
+  try {
+    return await fetch(resource, { ...fetchOptions, signal: controller.signal });
+  } finally {
+    clearTimeout(id);
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════
 // CASE-INSENSITIVE SHEET FIELD ACCESSOR
 // ═══════════════════════════════════════════════════════════════
+function fieldKeyMatches(left, right) {
+  const a = String(left).replace(/[^a-z0-9]/gi, '');
+  const b = String(right).replace(/[^a-z0-9]/gi, '');
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) {
+    let ac = a.charCodeAt(i);
+    let bc = b.charCodeAt(i);
+    if (ac >= 65 && ac <= 90) ac += 32;
+    if (bc >= 65 && bc <= 90) bc += 32;
+    if (ac !== bc) return false;
+  }
+  return true;
+}
+
 function getField(data, ...candidates) {
   if (!data || typeof data !== 'object') return '';
-  const normalized = {};
-  for (const key of Object.keys(data)) {
-    normalized[key.toLowerCase().replace(/[^a-z0-9]/g, '')] = data[key];
-  }
-  for (const c of candidates) {
-    const k = String(c).toLowerCase().replace(/[^a-z0-9]/g, '');
-    if (normalized[k] !== undefined && normalized[k] !== null) return normalized[k];
+  for (const candidate of candidates) {
+    const key = Object.keys(data).find(name => fieldKeyMatches(name, candidate));
+    if (key !== undefined && data[key] !== undefined && data[key] !== null) return data[key];
   }
   return '';
 }
@@ -88,26 +100,14 @@ function getField(data, ...candidates) {
 // ═══════════════════════════════════════════════════════════════
 // BACKGROUND + THEME RESOLVER
 // ═══════════════════════════════════════════════════════════════
-function resolveBackground(selectedStyle, backgroundImage) {
+function resolveBackground(selectedStyle) {
   const styleStr = typeof selectedStyle === 'string' ? selectedStyle.trim() : '';
-  const bgUrl    = typeof backgroundImage === 'string' ? backgroundImage.trim() : '';
-
   let theme = 'dark';
   const themeMatch = styleStr.match(/\/(dark|light)\s*$/i);
-  if (themeMatch) theme = themeMatch[1].toLowerCase();
+  if (themeMatch) theme = /^light$/i.test(themeMatch[1]) ? 'light' : 'dark';
 
-  // 1. Dedicated Background Image column
-  if (bgUrl && /^https?:\/\//i.test(bgUrl)) {
-    return { background: `url('${bgUrl}')`, theme, isImage: true };
-  }
-
-  // 2. "image/dark" | "image/light" marker
-  if (styleStr.toLowerCase().startsWith('image/')) {
-    return { background: CONFIG.defaultBg, theme, isImage: true };
-  }
-
-  // 3. Legacy "url('...')/theme"
-  if (styleStr.toLowerCase().startsWith('url(')) {
+  // Image backgrounds are stored in the Style field as url('...')/theme.
+  if (/^url\(/i.test(styleStr)) {
     const urlMatch = styleStr.match(/url\(["']?(.*?)["']?\)/i);
     const url = urlMatch?.[1] || '';
     if (url && /^https?:\/\//i.test(url)) {
@@ -116,17 +116,15 @@ function resolveBackground(selectedStyle, backgroundImage) {
     return { background: CONFIG.defaultBg, theme, isImage: true };
   }
 
-  // 4. Gradient
-  if (styleStr.toLowerCase().includes('linear-gradient')) {
-    let gradient = styleStr;
-    if (themeMatch) gradient = styleStr.slice(0, themeMatch.index).trim();
+  if (/linear-gradient/i.test(styleStr)) {
+    const gradient = themeMatch ? styleStr.slice(0, themeMatch.index).trim() : styleStr;
     return { background: gradient, theme, isImage: false };
   }
 
   return { background: CONFIG.defaultBg, theme, isImage: true };
 }
 
-function handleProfileData(data, plan) {
+function handleProfileData(data, plan, isIdView = false) {
   const loader = document.querySelector(".loader");
   if (loader) {
     loader.style.transition = "opacity 0.5s ease";
@@ -143,14 +141,12 @@ function handleProfileData(data, plan) {
   const resolvedName = getField(data, 'Name');
   if (!resolvedName) { showError("Invalid profile data: Name is required"); return; }
 
-  const resolvedStatus = getField(data, 'Status');
-  if (resolvedStatus && resolvedStatus !== "Active") { showError("This profile is currently inactive"); return; }
+  const resolvedStatus = String(getField(data, 'Status') || "").trim();
+  if (resolvedStatus && !/^active$/i.test(resolvedStatus)) { showError("This profile is currently inactive"); return; }
 
   try {
     const container = document.querySelector(".card-container");
     container.style.display = "block";
-
-    const isIdView = window.location.hash.startsWith("id_");
 
     const profileData = {
       name:            getField(data, 'Name') || 'User',
@@ -158,12 +154,11 @@ function handleProfileData(data, plan) {
       id:              getField(data, 'ID'),
       tagline:         getField(data, 'Tagline'),
       profilePic:      getField(data, 'Profile Picture URL', 'Profile Picture', 'Profile Pic') || CONFIG.defaultProfilePic,
-      socialLinks:     getField(data, 'Social Links', 'SocialLinks') || '',
+      socialLinks:     normalizeSocialLinks(getField(data, 'Social Links', 'SocialLinks')),
       email:           getField(data, 'Email') || '',
       phone:           getField(data, 'Phone') || '',
       address:         getField(data, 'Address') || '',
       selectedStyle:   getField(data, 'Selected Style', 'Style') || '',
-      backgroundImage: getField(data, 'Background Image', 'BackgroundImage', 'Background') || '',
     };
 
     const shareUrl = isIdView
@@ -173,10 +168,7 @@ function handleProfileData(data, plan) {
     updateMetaTags(profileData, isIdView);
 
     // ── Background + theme resolution ──────────────────────────
-    const { background, theme: cardTheme, isImage } = resolveBackground(
-      profileData.selectedStyle,
-      profileData.backgroundImage
-    );
+    const { background, theme: cardTheme, isImage } = resolveBackground(profileData.selectedStyle);
 
     document.body.style.background = background;
     document.body.style.backgroundSize = isImage ? 'cover' : 'auto';
@@ -293,11 +285,18 @@ function updateMetaTags(profileData, isIdView) {
   setMeta('meta[name="twitter:image"]', "content", image);
 }
 
+function normalizeSocialLinks(links) {
+  if (Array.isArray(links)) return links.map(link => String(link).trim()).filter(Boolean).join("\n");
+  if (typeof links !== "string") return "";
+  return links.split(/\r?\n/).map(link => link.trim()).filter(Boolean).join("\n");
+}
+
 function renderSocialLinks(links) {
-  if (!links || typeof links !== "string") return "";
+  links = normalizeSocialLinks(links);
+  if (!links) return "";
 
   const validLinks = links
-    .split("\n")
+    .split(/\r?\n/)
     .map((link) => {
       link = link.trim();
       if (!link) return null;
