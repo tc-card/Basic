@@ -8,17 +8,6 @@ This is the public showcase repository for `card.tccards.tn`. It serves the stat
 
 ---
 
-## ✨ Features
-
-- **Dynamic URL Routing:** Supports both `https://card.tccards.tn/@username` and `https://card.tccards.tn/id_<uuid>` formats.
-- **SEO & Social Media Previews:** A Cloudflare Worker intercepts bot requests (WhatsApp, Twitter, Facebook, LinkedIn) and dynamically serves the correct Open Graph metadata for the user.
-- **Dark Glassmorphism Card:** Ensures maximum text readability and a premium aesthetic, even against bright or complex user-uploaded background images.
-- **Dynamic Gradients:** Supports named presets like `ocean`, `sunset`, `midnight`, `neon`, and `purple` fetched from the database.
-- **Random Profile Discovery:** Visiting `https://card.tccards.tn/@Random-profile` or `https://card.tccards.tn/@random` automatically loads a random user profile from a curated list.
-- **Contact & vCard Support:** Allows visitors to view contact details, download vCards, and copy contact information instantly.
-
----
-
 ## 🛠 Tech Stack
 
 - **Frontend:** HTML5, Tailwind CSS, Pure Vanilla JavaScript
