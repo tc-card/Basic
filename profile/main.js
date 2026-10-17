@@ -111,7 +111,7 @@ function resolveBackground(selectedStyle) {
     const urlMatch = styleStr.match(/url\(["']?(.*?)["']?\)/i);
     const url = urlMatch?.[1] || '';
     if (url && /^https?:\/\//i.test(url)) {
-      return { background: `url('${url}')`, theme, isImage: true };
+      return { background: `url("${url}")`, theme, isImage: true };
     }
     return { background: CONFIG.defaultBg, theme, isImage: true };
   }
