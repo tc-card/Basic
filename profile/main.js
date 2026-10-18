@@ -15,6 +15,27 @@ const CONFIG = {
   },
 };
 
+const RANDOM_PROFILE_LINKS = [
+  "Ali",
+  "SkanDev",
+  "yassine",
+  "mehdigh",
+  "Oussemabennour",
+  "Paralingua",
+  "Keeto",
+  "houssem",
+  "Emna",
+  "Omar",
+  "Mohamed",
+  "Hamza",
+  "Oussema",
+  "the_cyber_corner",
+  "Seddik",
+  "Nour",
+  "Ameni",
+  "Chiheb",
+];
+
 document.addEventListener("DOMContentLoaded", function () {
   document.body.style.background = CONFIG.defaultBg;
   document.body.style.backgroundSize = "cover";
@@ -24,6 +45,14 @@ document.addEventListener("DOMContentLoaded", function () {
   if (!hash) {
     showError("No profile link provided");
     return;
+  }
+
+  const normalizedHash = hash.toLowerCase();
+  if (normalizedHash === "random" || normalizedHash === "random-profile") {
+    hash = RANDOM_PROFILE_LINKS[
+      Math.floor(Math.random() * RANDOM_PROFILE_LINKS.length)
+    ];
+    window.history.replaceState(null, null, `https://card.tccards.tn/@${hash}`);
   }
 
   const isIdLookup = hash.startsWith("id_");
