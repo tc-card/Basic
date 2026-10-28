@@ -375,3 +375,39 @@ body {
   background: #1d4ed8;
   transform: scale(1.03);
 }
+
+/* ─────────────────────────────────────────────────────────────
+   LIGHT-THEME POPUP OVERRIDES
+   Swal popups get .swal-theme-light when the card uses a light
+   theme, so the contact list, links and buttons stay readable
+   on a light background.
+   ───────────────────────────────────────────────────────────── */
+.swal-theme-light .contact-name {
+  color: #0f172a;
+}
+
+.swal-theme-light .contact-detail-item {
+  background: rgba(0, 0, 0, 0.06);
+}
+.swal-theme-light .contact-detail-item:hover {
+  background: rgba(0, 0, 0, 0.12);
+}
+.swal-theme-light .contact-detail-item a {
+  color: #1e293b;
+}
+.swal-theme-light .contact-detail-item a:hover {
+  color: #0f172a;
+}
+
+.swal-theme-light .copy-btn {
+  background: rgba(0, 0, 0, 0.08);
+  color: #0f172a;
+  border-color: rgba(0, 0, 0, 0.15);
+}
+.swal-theme-light .copy-btn:hover {
+  background: rgba(0, 0, 0, 0.15);
+}
+
+.swal-theme-light .share-options h3 {
+  color: #0f172a;
+}

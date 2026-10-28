@@ -36,7 +36,18 @@ const RANDOM_PROFILE_LINKS = [
   "Chiheb",
 ];
 
+// Tracks the active card theme so popups can match it.
+let currentTheme = 'dark';
+
 document.addEventListener("DOMContentLoaded", function () {
+  // iOS Safari: prevent the heuristic "data detectors" from turning plain
+  // contact text into auto-detected phone/email/address links. This is a
+  // major trigger for Safari's "collecting client data" warning.
+  const formatDetection = document.createElement("meta");
+  formatDetection.name = "format-detection";
+  formatDetection.content = "telephone=no, email=no, address=no";
+  document.head.appendChild(formatDetection);
+
   document.body.style.background = CONFIG.defaultBg;
   document.body.style.backgroundSize = "cover";
   document.body.style.backdropFilter = "blur(5px)";
@@ -131,6 +142,12 @@ function getField(data, ...candidates) {
 // ═══════════════════════════════════════════════════════════════
 function resolveBackground(selectedStyle) {
   const styleStr = typeof selectedStyle === 'string' ? selectedStyle.trim() : '';
+
+  // No style selected → "default" morphed-glass theme on the default image.
+  if (!styleStr) {
+    return { background: CONFIG.defaultBg, theme: 'default', isImage: true };
+  }
+
   let theme = 'dark';
   const themeMatch = styleStr.match(/\/(dark|light)\s*$/i);
   if (themeMatch) theme = /^light$/i.test(themeMatch[1]) ? 'light' : 'dark';
@@ -142,7 +159,7 @@ function resolveBackground(selectedStyle) {
     if (url && /^https?:\/\//i.test(url)) {
       return { background: `url("${url}")`, theme, isImage: true };
     }
-    return { background: CONFIG.defaultBg, theme, isImage: true };
+    return { background: CONFIG.defaultBg, theme: 'default', isImage: true };
   }
 
   if (/linear-gradient/i.test(styleStr)) {
@@ -150,7 +167,38 @@ function resolveBackground(selectedStyle) {
     return { background: gradient, theme, isImage: false };
   }
 
-  return { background: CONFIG.defaultBg, theme, isImage: true };
+  return { background: CONFIG.defaultBg, theme: 'default', isImage: true };
+}
+
+// ═══════════════════════════════════════════════════════════════
+// THEME-AWARE POPUP PALETTE
+// ═══════════════════════════════════════════════════════════════
+function getPopupTheme() {
+  if (currentTheme === 'light') {
+    return {
+      background: '#f1f5f9',
+      color: '#0f172a',
+      toastBg: '#e2e8f0',
+      toastColor: '#0f172a',
+      isLight: true,
+    };
+  }
+  if (currentTheme === 'default') {
+    return {
+      background: '#0f172a',
+      color: '#ffffff',
+      toastBg: '#0b1220',
+      toastColor: '#ffffff',
+      isLight: false,
+    };
+  }
+  return {
+    background: '#111827',
+    color: '#ffffff',
+    toastBg: '#0b1220',
+    toastColor: '#ffffff',
+    isLight: false,
+  };
 }
 
 function handleProfileData(data, plan, isIdView = false) {
@@ -199,20 +247,31 @@ function handleProfileData(data, plan, isIdView = false) {
     // ── Background + theme resolution ──────────────────────────
     const { background, theme: cardTheme, isImage } = resolveBackground(profileData.selectedStyle);
 
+    // Expose the theme so popups can match the card.
+    currentTheme = cardTheme;
+    document.body.dataset.theme = cardTheme;
+
     document.body.style.background = background;
     document.body.style.backgroundSize = isImage ? 'cover' : 'auto';
     document.body.style.backgroundPosition = 'center';
     document.body.style.backgroundRepeat = 'no-repeat';
 
     // ── Theme-dependent glassmorphism ──────────────────────────
-    const cardBg     = cardTheme === 'light' ? 'rgba(255, 255, 255, 0.2)' : 'rgba(17, 24, 39, 0.85)';
-    const cardBorder = cardTheme === 'light' ? 'rgba(255, 255, 255, 0.4)' : 'rgba(255, 255, 255, 0.15)';
-    const nameBg     = cardTheme === 'light' ? 'bg-white/30' : 'bg-gray-800';
-    const nameText   = cardTheme === 'light' ? 'text-gray-900' : 'text-white';
-    const taglineText = cardTheme === 'light' ? 'text-gray-800' : 'text-gray-300';
-    const buttonBg   = cardTheme === 'light' ? 'bg-white/30 hover:bg-white/50' : 'bg-gray-800 hover:bg-gray-700';
-    const shareIconBg = cardTheme === 'light' ? 'bg-white/30 text-gray-800' : 'bg-gray-800 text-gray-300';
-    const dividerColor = cardTheme === 'light' ? 'border-white/30' : 'border-white/10';
+    // "default" gets a soft morphed-glass gradient so the card blends into
+    // the default background instead of looking flat.
+    const isLight = cardTheme === 'light';
+    const cardBg = isLight
+      ? 'rgba(255, 255, 255, 0.2)'
+      : cardTheme === 'default'
+        ? 'linear-gradient(145deg, rgba(17, 24, 39, 0.72), rgba(2, 6, 23, 0.55))'
+        : 'rgba(17, 24, 39, 0.85)';
+    const cardBorder  = isLight ? 'rgba(255, 255, 255, 0.4)' : 'rgba(255, 255, 255, 0.15)';
+    const nameBg      = isLight ? 'bg-white/30' : 'bg-gray-800';
+    const nameText    = isLight ? 'text-gray-900' : 'text-white';
+    const taglineText = isLight ? 'text-gray-800' : 'text-gray-300';
+    const buttonBg    = isLight ? 'bg-white/30 hover:bg-white/50' : 'bg-gray-800 hover:bg-gray-700';
+    const shareIconBg = isLight ? 'bg-white/30 text-gray-800' : 'bg-gray-800 text-gray-300';
+    const dividerColor = isLight ? 'border-white/30' : 'border-white/10';
 
     container.innerHTML = `
       <div class="w-full container max-w-md p-6 md:p-24 rounded-xl shadow-2xl mx-auto"
@@ -223,7 +282,7 @@ function handleProfileData(data, plan, isIdView = false) {
           </div>
         </div>
         <div class="flex flex-col items-center">
-          <img src="${escapeHtml(profileData.profilePic)}" class="w-32 h-32 bg-gray-800 rounded-full mb-4 profile-picture" style="box-shadow: 0 0 0 4px ${cardTheme === 'light' ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.2)'};" alt="${escapeHtml(profileData.name)}'s profile">
+          <img src="${escapeHtml(profileData.profilePic)}" class="w-32 h-32 bg-gray-800 rounded-full mb-4 profile-picture" style="box-shadow: 0 0 0 4px ${isLight ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.2)'};" alt="${escapeHtml(profileData.name)}'s profile">
 
           <div class="w-full h-12 ${nameBg} rounded mb-2 flex items-center justify-center shadow-lg">
             <h1 class="text-2xl font-bold ${nameText}">${escapeHtml(profileData.name)}</h1>
@@ -237,7 +296,7 @@ function handleProfileData(data, plan, isIdView = false) {
 
           ${profileData.email || profileData.phone || profileData.address
             ? `<div class="w-48 h-12 ${buttonBg} rounded mb-4 flex items-center justify-center shadow-lg">
-              <button class="contact-btn ${cardTheme === 'light' ? 'text-gray-900' : ''}" onclick="showContactDetails(${escapeHtml(
+              <button class="contact-btn ${isLight ? 'text-gray-900' : ''}" onclick="showContactDetails(${escapeHtml(
                 JSON.stringify({
                   name: profileData.name,
                   profilepic: profileData.profilePic,
@@ -253,12 +312,12 @@ function handleProfileData(data, plan, isIdView = false) {
 
         <div class="mt-8 pt-4 border-t ${dividerColor}">
           <footer class="space-y-2 text-center">
-            <div class="w-full py-2 rounded-lg ${cardTheme === 'light' ? 'bg-white/20' : 'bg-white/5'} backdrop-blur-md border ${dividerColor}">
-              <a href="https://tccards.tn" class="${cardTheme === 'light' ? 'text-gray-800 hover:text-gray-900' : 'text-gray-300 hover:text-white'} text-sm transition-colors">
+            <div class="w-full py-2 rounded-lg ${isLight ? 'bg-white/20' : 'bg-white/5'} backdrop-blur-md border ${dividerColor}">
+              <a href="https://tccards.tn" class="${isLight ? 'text-gray-800 hover:text-gray-900' : 'text-gray-300 hover:text-white'} text-sm transition-colors">
                 Powered by &copy; Total Connect ${new Date().getFullYear()}
               </a>
             </div>
-            <div class="w-1/2 mx-auto py-2 rounded-lg ${cardTheme === 'light' ? 'bg-gray-200' : 'bg-gray-900'} shadow-lg border ${dividerColor}">
+            <div class="w-1/2 mx-auto py-2 rounded-lg ${isLight ? 'bg-gray-200' : 'bg-gray-900'} shadow-lg border ${dividerColor}">
               <a href="https://plans.tccards.tn" target="_blank" class="text-emerald-400 hover:text-emerald-300 text-sm font-medium transition-colors">
                 Get your Card
               </a>
@@ -420,13 +479,15 @@ async function showContactDetails(contact) {
   try {
     if (!contact || typeof contact !== 'object') throw new Error('Invalid contact data');
 
+    const popup = getPopupTheme();
+
     const contactHtml = `
-      <div class="contact-details">
+      <div class="contact-details" x-apple-data-detectors="false">
         <h3 class="contact-name">${escapeHtml(contact.name)}</h3>
-        <div class="contact-detail-list">
-          ${contact.email ? `<div class="contact-detail-item"><i class="fas fa-envelope"></i><a href="mailto:${escapeHtml(contact.email)}">${escapeHtml(contact.email)}</a></div>` : ''}
-          ${contact.phone ? `<div class="contact-detail-item"><i class="fas fa-phone"></i><a href="tel:${escapeHtml(contact.phone)}">${escapeHtml(contact.phone)}</a></div>` : ''}
-          ${contact.address ? `<div class="contact-detail-item"><i class="fas fa-map-marker-alt"></i><a href="https://maps.google.com/?q=${encodeURIComponent(contact.address)}" target="_blank">${escapeHtml(contact.address)}</a></div>` : ''}
+        <div class="contact-detail-list" x-apple-data-detectors="false">
+          ${contact.email ? `<div class="contact-detail-item" x-apple-data-detectors="false"><i class="fas fa-envelope"></i><a href="mailto:${escapeHtml(contact.email)}">${escapeHtml(contact.email)}</a></div>` : ''}
+          ${contact.phone ? `<div class="contact-detail-item" x-apple-data-detectors="false"><i class="fas fa-phone"></i><a href="tel:${escapeHtml(contact.phone)}">${escapeHtml(contact.phone)}</a></div>` : ''}
+          ${contact.address ? `<div class="contact-detail-item" x-apple-data-detectors="false"><i class="fas fa-map-marker-alt"></i><a href="https://maps.google.com/?q=${encodeURIComponent(contact.address)}" target="_blank" rel="noopener noreferrer">${escapeHtml(contact.address)}</a></div>` : ''}
         </div>
         <div class="contact-actions-row">
           <button class="contact-action-btn copy-btn" id="copyDetailsBtn"><i class="fas fa-copy"></i> Copy Details</button>
@@ -438,22 +499,45 @@ async function showContactDetails(contact) {
     await Swal.fire({
       title: 'Contact Details',
       html: contactHtml,
-      background: '#1a2332',
-      color: '#fff',
+      background: popup.background,
+      color: popup.color,
       showCloseButton: true,
       closeButtonHtml: '✕',
       showConfirmButton: false,
       showCancelButton: false,
       allowOutsideClick: false,
-      customClass: { closeButton: 'swal-close-button-custom', popup: 'swal-popup-custom' },
+      customClass: {
+        closeButton: 'swal-close-button-custom',
+        popup: popup.isLight ? 'swal-theme-light' : 'swal-theme-dark',
+      },
       didOpen: (modal) => {
         modal.querySelector('#copyDetailsBtn')?.addEventListener('click', async (e) => {
           e.stopPropagation();
           const copied = await copyContactDetails(contact);
           if (copied) {
-            Swal.fire({ icon: 'success', title: 'Copied!', toast: true, position: 'center', showConfirmButton: false, timer: 1500, timerProgressBar: true, background: '#1a1a1a', color: '#fff' });
+            Swal.fire({
+              icon: 'success',
+              title: 'Copied!',
+              toast: true,
+              position: 'center',
+              showConfirmButton: false,
+              timer: 1500,
+              timerProgressBar: true,
+              background: popup.toastBg,
+              color: popup.toastColor,
+            });
           } else {
-            Swal.fire({ icon: 'error', title: 'Copy failed', text: 'Please allow clipboard access.', toast: true, position: 'center', showConfirmButton: false, timer: 2000 });
+            Swal.fire({
+              icon: 'error',
+              title: 'Copy failed',
+              text: 'Please allow clipboard access.',
+              toast: true,
+              position: 'center',
+              showConfirmButton: false,
+              timer: 2000,
+              background: popup.toastBg,
+              color: popup.toastColor,
+            });
           }
         });
 
@@ -464,20 +548,51 @@ async function showContactDetails(contact) {
             const fileName = `${contact.name || 'contact'}.vcf`;
             const shared = await shareVCardFile(vcard, fileName);
             if (shared) {
-              Swal.fire({ icon: 'success', title: 'Contact Shared!', text: 'Use the share sheet to add to your contacts.', background: '#1a1a1a', color: '#fff', confirmButtonColor: '#2563eb' });
+              Swal.fire({
+                icon: 'success',
+                title: 'Contact Shared!',
+                text: 'Use the share sheet to add to your contacts.',
+                background: popup.background,
+                color: popup.color,
+                confirmButtonColor: '#2563eb',
+              });
               return;
             }
             downloadVCard(vcard, fileName);
-            Swal.fire({ icon: 'success', title: 'Contact Saved!', text: 'The vCard file has been downloaded.', toast: true, position: 'center', showConfirmButton: false, timer: 2000, timerProgressBar: true, background: '#1a1a1a', color: '#fff' });
+            Swal.fire({
+              icon: 'success',
+              title: 'Contact Saved!',
+              text: 'The vCard file has been downloaded.',
+              toast: true,
+              position: 'center',
+              showConfirmButton: false,
+              timer: 2000,
+              timerProgressBar: true,
+              background: popup.toastBg,
+              color: popup.toastColor,
+            });
           } catch (err) {
-            Swal.fire({ icon: 'error', title: 'Save failed', text: 'Could not save contact. Please try again.', background: '#1a1a1a', color: '#fff' });
+            Swal.fire({
+              icon: 'error',
+              title: 'Save failed',
+              text: 'Could not save contact. Please try again.',
+              background: popup.background,
+              color: popup.color,
+            });
           }
         });
       },
     });
   } catch (error) {
     console.error('Error in showContactDetails:', error);
-    await Swal.fire({ icon: 'error', title: 'Error', text: 'Could not display contact details', background: '#1a1a1a', color: '#fff' });
+    const popup = getPopupTheme();
+    await Swal.fire({
+      icon: 'error',
+      title: 'Error',
+      text: 'Could not display contact details',
+      background: popup.background,
+      color: popup.color,
+    });
   }
 }
 
@@ -512,14 +627,15 @@ async function showShareOptions(link) {
     if (navigator.share) {
       await navigator.share({ title: "Check out this profile", text: "View my digital business card", url: link });
     } else {
+      const popup = getPopupTheme();
       const shareHtml = `
         <div class="share-options">
           <h3>Share this profile</h3>
           <div class="share-links">
-            <a href="https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(link)}" target="_blank" class="share-link facebook">Facebook</a>
-            <a href="https://twitter.com/intent/tweet?url=${encodeURIComponent(link)}" target="_blank" class="share-link twitter">Twitter</a>
-            <a href="https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(link)}" target="_blank" class="share-link linkedin">LinkedIn</a>
-            <a href="https://api.whatsapp.com/send?text=${encodeURIComponent(link)}" target="_blank" class="share-link whatsapp">WhatsApp</a>
+            <a href="https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(link)}" target="_blank" rel="noopener noreferrer" class="share-link facebook">Facebook</a>
+            <a href="https://twitter.com/intent/tweet?url=${encodeURIComponent(link)}" target="_blank" rel="noopener noreferrer" class="share-link twitter">Twitter</a>
+            <a href="https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(link)}" target="_blank" rel="noopener noreferrer" class="share-link linkedin">LinkedIn</a>
+            <a href="https://api.whatsapp.com/send?text=${encodeURIComponent(link)}" target="_blank" rel="noopener noreferrer" class="share-link whatsapp">WhatsApp</a>
           </div>
         </div>
       `;
@@ -528,9 +644,13 @@ async function showShareOptions(link) {
         html: shareHtml,
         showCancelButton: true,
         cancelButtonText: "Close",
-        background: "#162949",
-        color: "#fff",
-        customClass: { confirmButton: "swal-confirm-button", cancelButton: "swal-cancel-button" },
+        background: popup.background,
+        color: popup.color,
+        customClass: {
+          confirmButton: "swal-confirm-button",
+          cancelButton: "swal-cancel-button",
+          popup: popup.isLight ? 'swal-theme-light' : 'swal-theme-dark',
+        },
       });
     }
   } catch (error) {
