@@ -304,7 +304,7 @@ const RENDERERS = {
         ${shareButton(theme, interactive, 'absolute top-4 right-4')}
         <div class="flex flex-col items-center">
           <img src="${escapeHtml(p.profilePic)}" alt=""
-               class="w-32 h-32 rounded-full object-cover mb-4"
+            class="profile-image-trigger w-32 h-32 rounded-full object-cover mb-4"
                style="box-shadow:0 0 0 4px ${theme === 'light' ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.2)'};">
           <div class="w-full h-12 rounded mb-2 flex items-center justify-center shadow-lg"
                style="background:${c.nameBg};">
@@ -335,7 +335,7 @@ const RENDERERS = {
         </div>
         <div class="relative -mt-16 flex justify-center">
           <img src="${escapeHtml(p.profilePic)}" alt=""
-               class="w-32 h-32 rounded-full object-cover"
+            class="profile-image-trigger w-32 h-32 rounded-full object-cover"
                style="border:4px solid ${a};box-shadow:0 10px 30px rgba(0,0,0,0.45);">
         </div>
         <div class="px-6 pt-4 pb-6 text-center">
@@ -358,8 +358,8 @@ const RENDERERS = {
         ${shareButton(theme, interactive, 'absolute top-4 right-4 z-20')}
         <div class="grid grid-cols-1 md:grid-cols-2">
           <div class="p-6 md:p-8 flex flex-col items-center justify-center text-center md:border-r" style="border-color:${c.cardBorder};">
-            <img src="${escapeHtml(p.profilePic)}" alt=""
-                 class="w-28 h-28 rounded-full object-cover mb-4"
+              <img src="${escapeHtml(p.profilePic)}" alt=""
+                class="profile-image-trigger w-28 h-28 rounded-full object-cover mb-4"
                  style="border:3px solid ${accent || defaultAccent(theme)};box-shadow:0 8px 24px rgba(0,0,0,0.35);">
             <h1 class="text-2xl font-bold" style="color:${c.text};">${escapeHtml(p.name)}</h1>
             ${p.tagline ? `<p class="mt-2 text-sm" style="color:${c.sub};">${escapeHtml(p.tagline)}</p>` : ''}
@@ -384,7 +384,7 @@ const RENDERERS = {
         <div class="flex flex-col items-center text-center mb-6 relative">
           ${shareButton(theme, interactive, 'absolute top-0 right-0')}
           <img src="${escapeHtml(p.profilePic)}" alt=""
-               class="w-24 h-24 rounded-full object-cover mb-3"
+            class="profile-image-trigger w-24 h-24 rounded-full object-cover mb-3"
                style="border:2px solid ${accent || defaultAccent(theme)};box-shadow:0 8px 24px rgba(0,0,0,0.45);">
           <h1 class="text-2xl font-bold" style="color:${c.text};text-shadow:${shadow};">${escapeHtml(p.name)}</h1>
           ${p.tagline ? `<p class="mt-1 text-sm" style="color:${c.sub};text-shadow:${shadow};">${escapeHtml(p.tagline)}</p>` : ''}
@@ -412,8 +412,8 @@ const RENDERERS = {
           </div>
           <div class="flex items-start justify-between gap-4 mb-3">
             <h1 class="flex-1 min-w-0 text-4xl font-black leading-tight break-words" style="color:${c.text};font-family:Georgia,'Times New Roman',serif;">${escapeHtml(p.name)}</h1>
-            <img src="${escapeHtml(p.profilePic)}" alt=""
-                 class="w-20 h-20 rounded-2xl object-cover flex-shrink-0"
+              <img src="${escapeHtml(p.profilePic)}" alt=""
+                class="profile-image-trigger w-20 h-20 rounded-2xl object-cover flex-shrink-0"
                  style="border:2px solid ${a};">
           </div>
           ${p.tagline ? `<p class="text-base italic mt-3 mb-6 leading-relaxed" style="color:${c.sub};font-family:Georgia,'Times New Roman',serif;">&ldquo;${escapeHtml(p.tagline)}&rdquo;</p>` : ''}
@@ -435,7 +435,7 @@ const RENDERERS = {
       <div class="w-full max-w-md mx-auto grid grid-cols-2 gap-3">
         <div class="col-span-2 p-4 md:p-5 rounded-2xl flex items-center gap-4 relative" style="${tileStyle}">
           <img src="${escapeHtml(p.profilePic)}" alt=""
-               class="w-16 h-16 rounded-xl object-cover flex-shrink-0"
+            class="profile-image-trigger w-16 h-16 rounded-xl object-cover flex-shrink-0"
                style="border:2px solid ${a};">
           <div class="flex-1 min-w-0">
             <h1 class="text-lg md:text-xl font-bold truncate" style="color:${c.text};">${escapeHtml(p.name)}</h1>
@@ -466,8 +466,8 @@ const RENDERERS = {
           ${p.tagline ? `<p class="text-base italic mb-6 leading-snug" style="color:${c.sub};font-family:Georgia,'Times New Roman',serif;">${escapeHtml(p.tagline)}</p>` : ''}
           <div class="h-1 w-16 rounded mb-6" style="background:${a};"></div>
           <div class="flex items-center gap-3 mb-6">
-            <img src="${escapeHtml(p.profilePic)}" alt=""
-                 class="w-14 h-14 rounded-full object-cover flex-shrink-0"
+              <img src="${escapeHtml(p.profilePic)}" alt=""
+                class="profile-image-trigger w-14 h-14 rounded-full object-cover flex-shrink-0"
                  style="border:2px solid ${a};">
             ${hasLinks(p) ? `<p class="text-xs uppercase" style="letter-spacing:0.15em;color:${c.sub};">Find me online</p>` : ''}
           </div>
@@ -488,8 +488,8 @@ const RENDERERS = {
            style="background:${c.cardBg};${glass(c, 20)}border:1px solid ${c.cardBorder};">
         <div class="p-5">
           <div class="flex items-center gap-3">
-            <img src="${escapeHtml(p.profilePic)}" alt=""
-                 class="w-12 h-12 rounded-full object-cover flex-shrink-0"
+              <img src="${escapeHtml(p.profilePic)}" alt=""
+                class="profile-image-trigger w-12 h-12 rounded-full object-cover flex-shrink-0"
                  style="border:2px solid ${a};">
             <div class="flex-1 min-w-0">
               <h1 class="text-base font-bold truncate" style="color:${c.text};">${escapeHtml(p.name)}</h1>

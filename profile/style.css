@@ -45,6 +45,87 @@ body {
     margin-bottom: 15px;
 }
 
+.profile-image-trigger {
+  cursor: zoom-in;
+}
+
+.profile-image-lightbox[hidden] {
+  display: none;
+}
+
+.profile-image-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: grid;
+  place-items: center;
+  padding: 8vh 8vw;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 180ms ease, visibility 180ms ease;
+}
+
+.profile-image-lightbox.is-open {
+  opacity: 1;
+  visibility: visible;
+}
+
+.profile-image-lightbox-image {
+  width: auto;
+  height: auto;
+  max-width: min(86vw, 1000px);
+  max-height: 84vh;
+  object-fit: contain;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.55);
+  transform: scale(0.96);
+  transition: transform 180ms ease;
+  cursor: zoom-out;
+}
+
+.profile-image-lightbox.is-open .profile-image-lightbox-image {
+  transform: scale(1);
+}
+
+.profile-image-lightbox-image.is-circle {
+  width: min(78vw, 72vh);
+  height: min(78vw, 72vh);
+  object-fit: cover;
+}
+
+.profile-image-lightbox-close {
+  position: absolute;
+  top: 20px;
+  right: 24px;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  font-size: 1.25rem;
+  line-height: 1;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.profile-image-lightbox-close:hover,
+.profile-image-lightbox-close:focus-visible {
+  background: rgba(255, 255, 255, 0.24);
+}
+
+.profile-image-lightbox-close:focus-visible {
+  outline: 3px solid #fff;
+  outline-offset: 3px;
+}
+
+.profile-image-lightbox-open {
+  overflow: hidden;
+}
+
 .tagline-text {
   margin: 0 0 1rem 0;
   font-size: 1.1rem;

@@ -22,6 +22,8 @@ let currentTheme = 'dark';
 let currentAccent = '';
 
 document.addEventListener('DOMContentLoaded', function () {
+  setupProfileImageLightbox();
+
   const formatDetection = document.createElement('meta');
   formatDetection.name = 'format-detection';
   formatDetection.content = 'telephone=no, email=no, address=no';
@@ -49,6 +51,70 @@ document.addEventListener('DOMContentLoaded', function () {
 
   searchProfile(identifier, isIdLookup);
 });
+
+function setupProfileImageLightbox() {
+  document.addEventListener('click', (event) => {
+    const image = event.target.closest('.profile-image-trigger');
+    if (image) {
+      event.preventDefault();
+      openProfileImage(image);
+      return;
+    }
+
+    const lightbox = document.getElementById('profileImageLightbox');
+    if (lightbox && event.target === lightbox) closeProfileImage();
+  });
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') closeProfileImage();
+  });
+}
+
+function openProfileImage(sourceImage) {
+  let lightbox = document.getElementById('profileImageLightbox');
+
+  if (!lightbox) {
+    lightbox = document.createElement('div');
+    lightbox.id = 'profileImageLightbox';
+    lightbox.className = 'profile-image-lightbox';
+    lightbox.setAttribute('role', 'dialog');
+    lightbox.setAttribute('aria-modal', 'true');
+    lightbox.setAttribute('aria-label', 'Expanded profile image');
+    lightbox.innerHTML = `
+      <button type="button" class="profile-image-lightbox-close" aria-label="Close image">X</button>
+      <img class="profile-image-lightbox-image" alt="">
+    `;
+    lightbox.querySelector('.profile-image-lightbox-close').addEventListener('click', closeProfileImage);
+    document.body.appendChild(lightbox);
+  }
+
+  const expandedImage = lightbox.querySelector('.profile-image-lightbox-image');
+  const sourceStyle = getComputedStyle(sourceImage);
+  const sourceBounds = sourceImage.getBoundingClientRect();
+  const isCircle = sourceStyle.borderRadius === '50%';
+
+  expandedImage.src = sourceImage.currentSrc || sourceImage.src;
+  expandedImage.alt = sourceImage.alt || 'Expanded profile image';
+  expandedImage.style.borderRadius = sourceStyle.borderRadius;
+  expandedImage.style.aspectRatio = isCircle || !sourceBounds.height
+    ? '1 / 1'
+    : `${sourceBounds.width} / ${sourceBounds.height}`;
+  expandedImage.classList.toggle('is-circle', isCircle);
+
+  lightbox.hidden = false;
+  document.body.classList.add('profile-image-lightbox-open');
+  requestAnimationFrame(() => lightbox.classList.add('is-open'));
+  lightbox.querySelector('.profile-image-lightbox-close').focus();
+}
+
+function closeProfileImage() {
+  const lightbox = document.getElementById('profileImageLightbox');
+  if (!lightbox || lightbox.hidden) return;
+
+  lightbox.classList.remove('is-open');
+  document.body.classList.remove('profile-image-lightbox-open');
+  setTimeout(() => { lightbox.hidden = true; }, 180);
+}
 
 async function searchProfile(identifier, isIdLookup) {
   try {
