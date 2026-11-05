@@ -181,8 +181,18 @@ function hasContact(p) {
   return !!(p.email || p.phone || p.address);
 }
 
+function normalizeSocialLinks(links) {
+  if (Array.isArray(links)) {
+    return links.map((link) => String(link).trim()).filter(Boolean);
+  }
+  if (typeof links === 'string') {
+    return links.split(/\r?\n/).map((link) => link.trim()).filter(Boolean);
+  }
+  return [];
+}
+
 function hasLinks(p) {
-  return (p.socialLinks || []).some((l) => normalizeUrl(l));
+  return normalizeSocialLinks(p.socialLinks).some((link) => normalizeUrl(link));
 }
 
 function iconFor(domain) {
@@ -199,7 +209,7 @@ function iconFor(domain) {
 }
 
 function socialRows(links, theme, variant = 'stack', interactive = true, tileStyle = '') {
-  const items = (links || [])
+  const items = normalizeSocialLinks(links)
     .map(normalizeUrl)
     .filter(Boolean)
     .map((url) => ({ url, domain: domainOf(url) }));
