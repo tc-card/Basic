@@ -1,4 +1,4 @@
-import { renderCardHtml, parseStyleParams } from './renderer.js';
+import { renderCardHtml, parseStyleParams, backgroundLayerHtml } from './renderer.js';
 
 const CONFIG = {
   defaultBg: 'url(https://tccards.tn/Assets/background.png) center fixed',
@@ -107,11 +107,13 @@ function getField(data, ...candidates) {
 
 /* ── Background resolver now returns template + accent ───── */
 function resolveBackground(selectedStyle) {
-  const { base, template, accent } = parseStyleParams(selectedStyle);
+  const params = parseStyleParams(selectedStyle);
+  const { base, template, accent } = params;
+  const extra = { cardBlur: params.cardBlur, bgBlur: params.bgBlur, cardOpacity: params.cardOpacity };
   const styleStr = base;
 
   if (!styleStr) {
-    return { background: CONFIG.defaultBg, theme: 'default', isImage: true, template, accent };
+    return { background: CONFIG.defaultBg, theme: 'default', isImage: true, template, accent, ...extra };
   }
 
   let theme = 'dark';
@@ -122,17 +124,17 @@ function resolveBackground(selectedStyle) {
     const urlMatch = styleStr.match(/url\(["']?(.*?)["']?\)/i);
     const url = urlMatch?.[1] || '';
     if (url && /^https?:\/\//i.test(url)) {
-      return { background: `url("${url}")`, theme, isImage: true, template, accent };
+      return { background: `url("${url}")`, theme, isImage: true, template, accent, ...extra };
     }
-    return { background: CONFIG.defaultBg, theme: 'default', isImage: true, template, accent };
+    return { background: CONFIG.defaultBg, theme: 'default', isImage: true, template, accent, ...extra };
   }
 
   if (/linear-gradient/i.test(styleStr)) {
     const gradient = themeMatch ? styleStr.slice(0, themeMatch.index).trim() : styleStr;
-    return { background: gradient, theme, isImage: false, template, accent };
+    return { background: gradient, theme, isImage: false, template, accent, ...extra };
   }
 
-  return { background: CONFIG.defaultBg, theme: 'default', isImage: true, template, accent };
+  return { background: CONFIG.defaultBg, theme: 'default', isImage: true, template, accent, ...extra };
 }
 
 function getPopupTheme() {
@@ -188,7 +190,7 @@ function handleProfileData(data, plan, isIdView = false) {
 
     updateMetaTags(profileData, isIdView);
 
-    const { background, theme, isImage, template, accent } = resolveBackground(profileData.selectedStyle);
+    const { background, theme, isImage, template, accent, cardBlur, bgBlur, cardOpacity } = resolveBackground(profileData.selectedStyle);
 
     currentTheme = theme;
     document.body.dataset.theme = theme;
@@ -197,10 +199,25 @@ function handleProfileData(data, plan, isIdView = false) {
     document.body.style.backgroundPosition = 'center';
     document.body.style.backgroundRepeat = 'no-repeat';
 
+    // Background blur is opt-in per profile (bb=). Unset keeps the legacy look untouched;
+    // bb=0 turns the old body blur off; bb>0 blurs a dedicated layer so the card stays sharp.
+    if (bgBlur !== null) {
+      document.body.style.backdropFilter = '';
+      document.getElementById('bgBlurLayer')?.remove();
+      const layer = isImage ? backgroundLayerHtml(background, bgBlur, 'fixed') : '';
+      if (layer) {
+        document.documentElement.style.background = 'none';
+        document.body.style.background = '#0b1020';
+        document.body.insertAdjacentHTML('afterbegin', layer);
+      }
+    }
+
     container.innerHTML = renderCardHtml(profileData, {
       theme,
       template,
       accent,
+      cardBlur,
+      cardOpacity,
       interactive: true,
     });
 
