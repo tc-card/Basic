@@ -294,6 +294,7 @@ body {
 /* New Contact Details Popup – clean, no avatar, side‑by‑side buttons */
 .contact-details {
   padding: 0.25rem 0;
+  border-top: 3px solid var(--contact-accent, #3b82f6);
 }
 
 .contact-name {
@@ -315,6 +316,7 @@ body {
   align-items: center;
   gap: 0.75rem;
   background: rgba(255,255,255,0.06);
+  border: 1px solid color-mix(in srgb, var(--contact-accent, #3b82f6) 18%, transparent);
   padding: 0.6rem 1rem;
   border-radius: 10px;
   transition: background 0.2s;
@@ -325,7 +327,7 @@ body {
 .contact-detail-item i {
   width: 1.4rem;
   text-align: center;
-  color: #60a5fa;
+  color: var(--contact-accent, #3b82f6);
 }
 .contact-detail-item a {
   color: #e2e8f0;
@@ -375,11 +377,11 @@ body {
 }
 
 .save-btn {
-  background: #2563eb;
-  color: #fff;
+  background: var(--contact-accent, #3b82f6);
+  color: var(--contact-accent-text, #fff);
 }
 .save-btn:hover {
-  background: #1d4ed8;
+  filter: brightness(1.08);
   transform: scale(1.03);
 }
 
@@ -413,6 +415,10 @@ body {
 }
 .swal-theme-light .copy-btn:hover {
   background: rgba(0, 0, 0, 0.15);
+}
+
+.swal-theme-light .contact-detail-item {
+  border-color: color-mix(in srgb, var(--contact-accent, #2563eb) 24%, transparent);
 }
 
 .swal-theme-light .share-options h3 {

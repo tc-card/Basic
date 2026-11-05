@@ -19,6 +19,7 @@ const RANDOM_PROFILE_LINKS = [
 ];
 
 let currentTheme = 'dark';
+let currentAccent = '';
 
 document.addEventListener('DOMContentLoaded', function () {
   const formatDetection = document.createElement('meta');
@@ -138,13 +139,51 @@ function resolveBackground(selectedStyle) {
 }
 
 function getPopupTheme() {
+  const accent = currentAccent || (currentTheme === 'light' ? '#2563eb' : '#3b82f6');
+  const accentText = getReadableAccentText(accent);
+
   if (currentTheme === 'light') {
-    return { background: '#f1f5f9', color: '#0f172a', toastBg: '#e2e8f0', toastColor: '#0f172a', isLight: true };
+    return {
+      background: '#f1f5f9',
+      color: '#0f172a',
+      toastBg: '#e2e8f0',
+      toastColor: '#0f172a',
+      accent,
+      accentText,
+      isLight: true,
+    };
   }
   if (currentTheme === 'default') {
-    return { background: '#0f172a', color: '#ffffff', toastBg: '#0b1220', toastColor: '#ffffff', isLight: false };
+    return {
+      background: '#0f172a',
+      color: '#ffffff',
+      toastBg: '#0b1220',
+      toastColor: '#ffffff',
+      accent,
+      accentText,
+      isLight: false,
+    };
   }
-  return { background: '#111827', color: '#ffffff', toastBg: '#0b1220', toastColor: '#ffffff', isLight: false };
+  return {
+    background: '#111827',
+    color: '#ffffff',
+    toastBg: '#0b1220',
+    toastColor: '#ffffff',
+    accent,
+    accentText,
+    isLight: false,
+  };
+}
+
+function getReadableAccentText(hex) {
+  const match = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(hex || '');
+  if (!match) return '#ffffff';
+  const value = match[1].length === 3
+    ? match[1].split('').map((part) => part + part).join('')
+    : match[1];
+  const [red, green, blue] = [0, 2, 4].map((index) => parseInt(value.slice(index, index + 2), 16));
+  const luminance = (red * 299 + green * 587 + blue * 114) / 1000;
+  return luminance > 160 ? '#111827' : '#ffffff';
 }
 
 function handleProfileData(data, plan, isIdView = false) {
@@ -193,6 +232,7 @@ function handleProfileData(data, plan, isIdView = false) {
     const { background, theme, isImage, template, accent, cardBlur, bgBlur, cardOpacity } = resolveBackground(profileData.selectedStyle);
 
     currentTheme = theme;
+    currentAccent = accent || '';
     document.body.dataset.theme = theme;
     document.body.style.background = background;
     document.body.style.backgroundSize = isImage ? 'cover' : 'auto';
@@ -328,7 +368,7 @@ async function showContactDetails(contact) {
     if (!contact || typeof contact !== 'object') throw new Error('Invalid contact data');
     const popup = getPopupTheme();
     const contactHtml = `
-      <div class="contact-details" x-apple-data-detectors="false">
+      <div class="contact-details" x-apple-data-detectors="false" style="--contact-accent:${popup.accent};--contact-accent-text:${popup.accentText};">
         <h3 class="contact-name">${escapeHtml(contact.name)}</h3>
         <div class="contact-detail-list" x-apple-data-detectors="false">
           ${contact.email ? `<div class="contact-detail-item"><i class="fas fa-envelope"></i><a href="mailto:${escapeHtml(contact.email)}">${escapeHtml(contact.email)}</a></div>` : ''}
@@ -365,7 +405,7 @@ async function showContactDetails(contact) {
             const fileName = `${contact.name || 'contact'}.vcf`;
             const shared = await shareVCardFile(vcard, fileName);
             if (shared) {
-              Swal.fire({ icon: 'success', title: 'Contact Shared!', text: 'Use the share sheet to add to contacts.', background: popup.background, color: popup.color, confirmButtonColor: '#2563eb' });
+              Swal.fire({ icon: 'success', title: 'Contact Shared!', text: 'Use the share sheet to add to contacts.', background: popup.background, color: popup.color, confirmButtonColor: popup.accent });
               return;
             }
             downloadVCard(vcard, fileName);
