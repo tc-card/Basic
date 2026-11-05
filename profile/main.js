@@ -267,9 +267,9 @@ function updateMetaTags(profileData, isIdView) {
 }
 
 function normalizeSocialLinks(links) {
-  if (Array.isArray(links)) return links.map(l => String(l).trim()).filter(Boolean).join('\n');
-  if (typeof links !== 'string') return '';
-  return links.split(/\r?\n/).map(l => l.trim()).filter(Boolean).join('\n');
+  if (Array.isArray(links)) return links.map(l => String(l).trim()).filter(Boolean);
+  if (typeof links !== 'string') return [];
+  return links.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
 }
 
 /* ── vCard & contact (unchanged) ─────────────────────────── */
