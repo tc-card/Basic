@@ -28,6 +28,13 @@ body {
     background-position: center;
     background-repeat: no-repeat;
 }
+/* ── Template support (2026) ─────────────────────────────── */
+.poster-title {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  line-height: 0.95;
+}
 
 .profile-picture{
     width: 120px;
