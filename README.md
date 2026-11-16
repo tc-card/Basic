@@ -1,52 +1,43 @@
-# Basic - Public Digital Business Card
+# Basic — Public Digital Business Cards
 
-![Status](https://img.shields.io/badge/Status-Live-brightgreen)
-![Hosting](https://img.shields.io/badge/Hosting-GitHub%20Pages-blue)
-![Architecture](https://img.shields.io/badge/Architecture-Cloudflare%20Workers-orange)
+This repository serves the public profile cards at `card.tccards.tn`. The card page is static HTML, CSS, and JavaScript; it retrieves profile records from Google Apps Script and renders each card in the browser.
 
-This is the public showcase repository for `card.tccards.tn`. It serves the static HTML, CSS, and JavaScript that renders the beautiful, SEO-optimized digital business cards for users.
+## How the pieces work together
 
----
+1. The root `index.html` sends visitors to the profile page using the requested profile link.
+2. `profile/main.js` reads the requested link and fetches that profile from the Apps Script endpoint.
+3. `profile/profile.gs` looks up the matching row in the `Form` sheet and returns its profile fields.
+4. `profile/renderer.js` builds the profile-card markup and visual variants from the returned data.
+5. The Cloudflare Worker in `profile/worker.js` handles profile URLs for people and social crawlers. For crawlers, it returns HTML with profile-specific title, description, and image metadata to improve link previews and search presence; for visitors, it routes to the card page.
 
-## 🛠 Tech Stack
+New profile submissions enter through the separate **Total Connect** project at `Total Connect/plans/basic/code.gs`. That script writes new records to the `Form` sheet; the public card backend reads the records from there. The submission script is not part of this repository.
 
-- **Frontend:** HTML5, Tailwind CSS, Pure Vanilla JavaScript
-- **Backend Data:** Google Apps Script (`profile.gs`) and Google Sheets
-- **Routing & SEO:** Cloudflare Worker
-- **Hosting:** GitHub Pages (via GitHub Actions workflow)
-
----
-
-## 📂 File Structure
+## Structure
 
 ```text
-tc-card/Basic/
-├── .github/
-│   └── workflows/
-│       └── static.yml        # GitHub Actions workflow for deployment
-├── profile/                  # Main public profile card
-│   ├── index.html
-│   ├── main.js
-│   └── style.css
-├── profile.gs                # Google Apps Script backend (Data lookup & cache)
-├── worker.js                 # Cloudflare Worker (Routing & Bot handling)
-├── .redirects                # Redirects file (Netlify/Pages)
-├── 404.html                  # Custom 404 error page
-├── 504.html                  # Custom 504 error page
-├── index.html                # Root landing (likely handles redirects)
-└── README.md                 # This file
+Basic/
+├── .github/workflows/static.yml   # Deploys the static site to GitHub Pages
+├── profile/
+│   ├── index.html                 # Public card page
+│   ├── main.js                    # Profile lookup and page behavior
+│   ├── renderer.js                # Card markup and visual templates
+│   ├── style.css                  # Card page styles
+│   ├── profile.gs                 # Apps Script profile lookup API
+│   └── worker.js                  # Cloudflare Worker for profile routing and crawler metadata
+├── index.html                     # Root route into the profile page
+├── 404.html
+├── 504.html
+└── _redirects
 ```
----
 
-## 📄 License
+GitHub Actions publishes the static files. The Cloudflare Worker is a separate runtime and must be deployed/configured with the profile domain routes for crawler-aware responses.
 
-This project is licensed under the **Proprietary Source Code License**. See the [LICENSE](LICENSE) file for details.
+## License
 
----
+This project is licensed under the Proprietary Source Code License. See [LICENSE](LICENSE).
 
-## 📞 Contact & Support
+## Contact
 
-- **Company:** TC Cards
-- **Website:** [tccards.tn](https://tccards.tn)
-- **Live Demo:** [card.tccards.tn](https://card.tccards.tn/@random)
-
+- Company: TC Cards
+- Website: [tccards.tn](https://tccards.tn)
+- Live demo: [card.tccards.tn/@random](https://card.tccards.tn/@random)
